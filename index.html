@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>일일 운동 체크시트</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { background-color: #f1f5f9; color: #0f172a; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  
+  /* 상단 달력 영역 (45vh) */
+  .calendar-container { height: 45vh; background: #ffffff; padding: 12px; display: flex; flex-direction: column; border-bottom: 2px solid #cbd5e1; }
+  .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .calendar-header h2 { font-size: 1.1rem; font-weight: 700; color: #1e293b; }
+  .calendar-header button { background: #f8fafc; border: 1px solid #cbd5e1; padding: 4px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+  
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; flex-grow: 1; }
+  .day-name { font-size: 0.75rem; font-weight: 700; color: #64748b; padding-bottom: 4px; }
+  .day-cell { border-radius: 8px; border: 1px solid #f1f5f9; background: #fafafa; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 4px 2px; cursor: pointer; }
+  .day-cell.today { border: 2px solid #2563eb; background: #eff6ff; }
+  .day-number { font-size: 0.8rem; font-weight: 600; }
+  .status-mark { font-size: 1.1rem; font-weight: 900; line-height: 1; }
+  .mark-o { color: #16a34a; }
+  .mark-x { color: #dc2626; }
+
+  /* 하단 운동 리스트 영역 (55vh) */
+  .routine-container { height: 55vh; padding: 12px; overflow-y: auto; background: #f8fafc; }
+  .date-title { font-size: 0.95rem; font-weight: 700; color: #2563eb; margin-bottom: 8px; }
+  .read-only-notice { font-size: 0.75rem; color: #ef4444; font-weight: 600; margin-bottom: 8px; }
+  
+  .section-title { font-size: 0.8rem; font-weight: 700; color: #475569; margin: 12px 0 6px 0; text-transform: uppercase; }
+  
+  /* 균일 정돈된 운동 표 UI */
+  .exercise-table { width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 8px; }
+  .exercise-row { border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; }
+  .exercise-row:last-child { border-bottom: none; }
+  
+  /* 좌측: 종목 정보 및 셀프 수정 입력창 */
+  .exercise-left { display: flex; flex-direction: column; gap: 3px; flex: 1; padding-right: 8px; }
+  .exercise-name { font-size: 0.85rem; font-weight: 700; color: #0f172a; }
+  .exercise-inputs { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; color: #64748b; }
+  .input-field { width: 42px; padding: 2px 4px; font-size: 0.75rem; font-weight: 600; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; color: #1e293b; background: #f8fafc; }
+  .input-field:focus { border-color: #2563eb; background: #ffffff; outline: none; }
+
+  /* 우측: 균일 정렬 체크박스 영역 */
+  .exercise-right { display: flex; gap: 4px; align-items: center; justify-content: flex-end; width: 150px; flex-shrink: 0; }
+  .checkbox-label { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer; font-size: 0.65rem; font-weight: 700; color: #64748b; }
+  .checkbox-label input { display: none; }
+  .checkbox-label.checked { background: #2563eb; color: #ffffff; border-color: #2563eb; }
+  
+  /* 구분선 및 타바타 스타일 */
+  hr.divider { border: 0; height: 1px; background: #cbd5e1; margin: 12px 0; }
+  .tabata-row { background: #fff7ed; }
+  .tabata-row .checkbox-label.checked { background: #ea580c; border-color: #ea580c; }
+</style>
+</head>
+<body>
+
+<!-- 상단: 달력 -->
+<div class="calendar-container">
+  <div class="calendar-header">
+    <button id="prevMonth">&lt;</button>
+    <h2 id="monthTitle">2026년 8월</h2>
+    <button id="nextMonth">&gt;</button>
+  </div>
+  <div class="calendar-grid" id="calendarGrid"></div>
+</div>
+
+<!-- 하단: 운동 리스트 -->
+<div class="routine-container">
+  <div class="date-title" id="selectedDateTitle">오늘의 운동</div>
+  <div id="readOnlyNotice" class="read-only-notice" style="display:none;">⚠️ 지나간 기록/미래 일자는 수정할 수 없습니다. (조회 전용)</div>
+
+  <div class="section-title">기본 운동 루틴</div>
+  <div class="exercise-table" id="routineTable"></div>
+
+  <hr class="divider">
+
+  <div class="section-title">타바타 (Tabata)</div>
+  <div class="exercise-table" id="tabataTable"></div>
+</div>
+
+<script>
+  // 운동 기본 정보 (체크박스 개수 포함)
+  const defaultRoutine = [
+    { id: 'leg', name: '레그프레스', weight: 70, reps: 16, unit: '회', checks: 3 },
+    { id: 'pulley', name: '하이풀리', weight: 20, reps: 17, unit: '회', checks: 3 },
+    { id: 'chest', name: '시티드 체스트프레스', weight: 25, reps: 17, unit: '회', checks: 3 },
+    { id: 'shoulder', name: '숄더프레스 머신', weight: 15, reps: '8+7', unit: '회', checks: 6 },
+    { id: 'abs', name: '업도미널', weight: 70, reps: 20, unit: '회', checks: 3 },
+    { id: 'cardio', name: 'Zone 2 유산소', weight: 0, reps: 40, unit: '분', checks: 1 }
+  ];
+
+  const defaultTabata = [
+    { id: 'tabata', name: '타바타 트레이닝', weight: 0, reps: 20, unit: '분', checks: 1 }
+  ];
+
+  let currentDate = new Date();
+  let viewDate = new Date();
+
+  function getFormattedDate(d) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  const todayStr = getFormattedDate(currentDate);
+  let selectedDateStr = todayStr;
+
+  function loadData(dateStr) {
+    const data = localStorage.getItem('workout_v2_' + dateStr);
+    return data ? JSON.parse(data) : {};
+  }
+
+  function saveData(dateStr, data) {
+    localStorage.setItem('workout_v2_' + dateStr, JSON.stringify(data));
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+    document.getElementById('monthTitle').innerText = `${year}년 ${month + 1}월`;
+
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
+
+    const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+    dayNames.forEach(name => {
+      const el = document.createElement('div');
+      el.className = 'day-name';
+      el.innerText = name;
+      grid.appendChild(el);
+    });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const lastDate = new Date(year, month + 1, 0).getDate();
+
+    for (let i = 0; i < firstDay; i++) {
+      grid.appendChild(document.createElement('div'));
+    }
+
+    for (let day = 1; day <= lastDate; day++) {
+      const cellDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const cell = document.createElement('div');
+      cell.className = 'day-cell';
+      if (cellDateStr === todayStr) cell.classList.add('today');
+
+      const numEl = document.createElement('div');
+      numEl.className = 'day-number';
+      numEl.innerText = day;
+      cell.appendChild(numEl);
+
+      const savedData = loadData(cellDateStr);
+      // 하나라도 체크된 내역이 있는지 확인
+      const isCheckedAny = Object.keys(savedData).some(k => k.endsWith('_check') && savedData[k] === true);
+
+      const markEl = document.createElement('div');
+      markEl.className = 'status-mark';
+
+      if (cellDateStr <= todayStr) {
+        if (isCheckedAny) {
+          markEl.innerText = 'O';
+          markEl.classList.add('mark-o');
+        } else {
+          markEl.innerText = 'X';
+          markEl.classList.add('mark-x');
+        }
+      }
+
+      cell.appendChild(markEl);
+      cell.onclick = () => {
+        selectedDateStr = cellDateStr;
+        renderRoutine();
+      };
+
+      grid.appendChild(cell);
+    }
+  }
+
+  function renderRoutine() {
+    document.getElementById('selectedDateTitle').innerText = `${selectedDateStr} 운동 체크`;
+    const isToday = (selectedDateStr === todayStr);
+    document.getElementById('readOnlyNotice').style.display = isToday ? 'none' : 'block';
+
+    const savedData = loadData(selectedDateStr);
+
+    const renderRows = (targetId, items, isTabata = false) => {
+      const container = document.getElementById(targetId);
+      container.innerHTML = '';
+
+      items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'exercise-row' + (isTabata ? ' tabata-row' : '');
+
+        // 저장된 수량 기록이 있으면 로드, 없으면 기본값 사용
+        const weightVal = savedData[`${item.id}_weight`] !== undefined ? savedData[`${item.id}_weight`] : item.weight;
+        const repsVal = savedData[`${item.id}_reps`] !== undefined ? savedData[`${item.id}_reps`] : item.reps;
+
+        // 좌측: 종목명 및 수정 가능 인풋
+        let leftHtml = `<div class="exercise-left">
+          <span class="exercise-name">${item.name}</span>
+          <div class="exercise-inputs">`;
+        
+        if (item.id === 'cardio' || isTabata) {
+          leftHtml += `<input type="text" class="input-field ${item.id}-reps" value="${repsVal}" ${!isToday ? 'disabled' : ''}> ${item.unit}`;
+        } else {
+          leftHtml += `<input type="text" class="input-field ${item.id}-weight" value="${weightVal}" ${!isToday ? 'disabled' : ''}> kg · 
+                       <input type="text" class="input-field ${item.id}-reps" value="${repsVal}" ${!isToday ? 'disabled' : ''}> ${item.unit}`;
+        }
+        leftHtml += `</div></div>`;
+
+        // 우측: 회차별 체크박스 생성
+        let rightHtml = `<div class="exercise-right">`;
+        for (let c = 1; c <= item.checks; c++) {
+          const checkKey = `${item.id}_check_${c}`;
+          const isChecked = savedData[checkKey] || false;
+          rightHtml += `
+            <label class="checkbox-label ${isChecked ? 'checked' : ''}">
+              ${c}
+              <input type="checkbox" data-id="${item.id}" data-check="${c}" ${isChecked ? 'checked' : ''} ${!isToday ? 'disabled' : ''}>
+            </label>
+          `;
+        }
+        rightHtml += `</div>`;
+
+        row.innerHTML = leftHtml + rightHtml;
+        container.appendChild(row);
+      });
+    };
+
+    renderRows('routineTable', defaultRoutine);
+    renderRows('tabataTable', defaultTabata, true);
+
+    // 당일 변경사항 이벤트 처리 (수정 값 및 체크 상태 저장)
+    if (isToday) {
+      // 체크박스 클릭 시
+      document.querySelectorAll('.checkbox-label input').forEach(input => {
+        input.onchange = (e) => {
+          const id = e.target.getAttribute('data-id');
+          const checkNum = e.target.getAttribute('data-check');
+          const isChecked = e.target.checked;
+
+          savedData[`${id}_check_${checkNum}`] = isChecked;
+
+          // 실제 입력되어 있는 무게 및 횟수를 당시 기록으로 함께 저장
+          const weightInput = document.querySelector(`.${id}-weight`);
+          const repsInput = document.querySelector(`.${id}-reps`);
+          
+          if (weightInput) savedData[`${id}_weight`] = weightInput.value;
+          if (repsInput) savedData[`${id}_reps`] = repsInput.value;
+
+          saveData(selectedDateStr, savedData);
+          renderRoutine();
+        };
+      });
+
+      // 무게/횟수 텍스트 수정 시 자동 저장
+      document.querySelectorAll('.input-field').forEach(input => {
+        input.onchange = () => {
+          defaultRoutine.concat(defaultTabata).forEach(item => {
+            const weightEl = document.querySelector(`.${item.id}-weight`);
+            const repsEl = document.querySelector(`.${item.id}-reps`);
+            if (weightEl) savedData[`${item.id}_weight`] = weightEl.value;
+            if (repsEl) savedData[`${item.id}_reps`] = repsEl.value;
+          });
+          saveData(selectedDateStr, savedData);
+        };
+      });
+    }
+  }
+
+  document.getElementById('prevMonth').onclick = () => { viewDate.setMonth(viewDate.getMonth() - 1); renderCalendar(); };
+  document.getElementById('nextMonth').onclick = () => { viewDate.setMonth(viewDate.getMonth() + 1); renderCalendar(); };
+
+  renderCalendar();
+  renderRoutine();
+</script>
+</body>
+</html>
