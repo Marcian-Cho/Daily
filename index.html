@@ -6,50 +6,71 @@
 <title>일일 운동 체크시트</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  body { background-color: #f1f5f9; color: #0f172a; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
   
-  /* 상단 달력 영역 (45vh) */
-  .calendar-container { height: 45vh; background: #ffffff; padding: 12px; display: flex; flex-direction: column; border-bottom: 2px solid #cbd5e1; }
-  .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .calendar-header h2 { font-size: 1.1rem; font-weight: 700; color: #1e293b; }
-  .calendar-header button { background: #f8fafc; border: 1px solid #cbd5e1; padding: 4px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+  /* 100dvh 적용으로 모바일 주소창 영향 최소화 */
+  body { 
+    background-color: #f1f5f9; 
+    color: #0f172a; 
+    height: 100vh; 
+    height: 100dvh; 
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden; 
+  }
   
-  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; flex-grow: 1; }
-  .day-name { font-size: 0.75rem; font-weight: 700; color: #64748b; padding-bottom: 4px; }
-  .day-cell { border-radius: 8px; border: 1px solid #f1f5f9; background: #fafafa; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 4px 2px; cursor: pointer; }
+  /* 상단 달력 영역: 유연한 높이 및 여백 축소 */
+  .calendar-container { 
+    background: #ffffff; 
+    padding: 8px 12px; 
+    display: flex; 
+    flex-direction: column; 
+    border-bottom: 2px solid #cbd5e1; 
+    flex-shrink: 0; 
+  }
+  .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .calendar-header h2 { font-size: 1rem; font-weight: 700; color: #1e293b; }
+  .calendar-header button { background: #f8fafc; border: 1px solid #cbd5e1; padding: 2px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+  
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+  .day-name { font-size: 0.7rem; font-weight: 700; color: #64748b; padding-bottom: 2px; }
+  .day-cell { border-radius: 6px; border: 1px solid #f1f5f9; background: #fafafa; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 2px 1px; cursor: pointer; min-height: 36px; }
   .day-cell.today { border: 2px solid #2563eb; background: #eff6ff; }
-  .day-number { font-size: 0.8rem; font-weight: 600; }
-  .status-mark { font-size: 1.1rem; font-weight: 900; line-height: 1; }
+  .day-number { font-size: 0.75rem; font-weight: 600; }
+  .status-mark { font-size: 0.95rem; font-weight: 900; line-height: 1; }
   .mark-o { color: #16a34a; }
   .mark-x { color: #dc2626; }
 
-  /* 하단 운동 리스트 영역 (55vh) */
-  .routine-container { height: 55vh; padding: 12px; overflow-y: auto; background: #f8fafc; }
-  .date-title { font-size: 0.95rem; font-weight: 700; color: #2563eb; margin-bottom: 8px; }
-  .read-only-notice { font-size: 0.75rem; color: #ef4444; font-weight: 600; margin-bottom: 8px; }
+  /* 하단 운동 리스트 영역: 남은 공간 전체 차지 및 자동 스크롤 */
+  .routine-container { 
+    flex: 1; 
+    padding: 10px 12px; 
+    overflow-y: auto; 
+    background: #f8fafc; 
+    display: flex;
+    flex-direction: column;
+  }
+  .date-title { font-size: 0.9rem; font-weight: 700; color: #2563eb; margin-bottom: 6px; }
+  .read-only-notice { font-size: 0.7rem; color: #ef4444; font-weight: 600; margin-bottom: 6px; }
   
-  .section-title { font-size: 0.8rem; font-weight: 700; color: #475569; margin: 12px 0 6px 0; text-transform: uppercase; }
+  .section-title { font-size: 0.75rem; font-weight: 700; color: #475569; margin: 8px 0 4px 0; text-transform: uppercase; }
   
-  /* 균일 정돈된 운동 표 UI */
-  .exercise-table { width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 8px; }
-  .exercise-row { border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; }
+  /* 표 컴팩트화 */
+  .exercise-table { width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 4px; }
+  .exercise-row { border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; }
   .exercise-row:last-child { border-bottom: none; }
   
-  /* 좌측: 종목 정보 및 셀프 수정 입력창 */
-  .exercise-left { display: flex; flex-direction: column; gap: 3px; flex: 1; padding-right: 8px; }
-  .exercise-name { font-size: 0.85rem; font-weight: 700; color: #0f172a; }
-  .exercise-inputs { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; color: #64748b; }
-  .input-field { width: 42px; padding: 2px 4px; font-size: 0.75rem; font-weight: 600; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; color: #1e293b; background: #f8fafc; }
+  .exercise-left { display: flex; flex-direction: column; gap: 2px; flex: 1; padding-right: 6px; }
+  .exercise-name { font-size: 0.8rem; font-weight: 700; color: #0f172a; }
+  .exercise-inputs { display: flex; align-items: center; gap: 3px; font-size: 0.7rem; color: #64748b; }
+  .input-field { width: 38px; padding: 1px 3px; font-size: 0.7rem; font-weight: 600; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; color: #1e293b; background: #f8fafc; }
   .input-field:focus { border-color: #2563eb; background: #ffffff; outline: none; }
 
-  /* 우측: 균일 정렬 체크박스 영역 */
-  .exercise-right { display: flex; gap: 4px; align-items: center; justify-content: flex-end; width: 150px; flex-shrink: 0; }
-  .checkbox-label { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer; font-size: 0.65rem; font-weight: 700; color: #64748b; }
+  .exercise-right { display: flex; gap: 3px; align-items: center; justify-content: flex-end; width: 145px; flex-shrink: 0; }
+  .checkbox-label { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer; font-size: 0.6rem; font-weight: 700; color: #64748b; }
   .checkbox-label input { display: none; }
   .checkbox-label.checked { background: #2563eb; color: #ffffff; border-color: #2563eb; }
   
-  /* 구분선 및 타바타 스타일 */
-  hr.divider { border: 0; height: 1px; background: #cbd5e1; margin: 12px 0; }
+  hr.divider { border: 0; height: 1px; background: #cbd5e1; margin: 8px 0; }
   .tabata-row { background: #fff7ed; }
   .tabata-row .checkbox-label.checked { background: #ea580c; border-color: #ea580c; }
 </style>
@@ -60,7 +81,7 @@
 <div class="calendar-container">
   <div class="calendar-header">
     <button id="prevMonth">&lt;</button>
-    <h2 id="monthTitle">2026년 8월</h2>
+    <h2 id="monthTitle"></h2>
     <button id="nextMonth">&gt;</button>
   </div>
   <div class="calendar-grid" id="calendarGrid"></div>
@@ -81,7 +102,6 @@
 </div>
 
 <script>
-  // 운동 기본 정보 (체크박스 개수 포함)
   const defaultRoutine = [
     { id: 'leg', name: '레그프레스', weight: 70, reps: 16, unit: '회', checks: 3 },
     { id: 'pulley', name: '하이풀리', weight: 20, reps: 17, unit: '회', checks: 3 },
@@ -153,7 +173,6 @@
       cell.appendChild(numEl);
 
       const savedData = loadData(cellDateStr);
-      // 하나라도 체크된 내역이 있는지 확인
       const isCheckedAny = Object.keys(savedData).some(k => k.endsWith('_check') && savedData[k] === true);
 
       const markEl = document.createElement('div');
@@ -194,11 +213,9 @@
         const row = document.createElement('div');
         row.className = 'exercise-row' + (isTabata ? ' tabata-row' : '');
 
-        // 저장된 수량 기록이 있으면 로드, 없으면 기본값 사용
         const weightVal = savedData[`${item.id}_weight`] !== undefined ? savedData[`${item.id}_weight`] : item.weight;
         const repsVal = savedData[`${item.id}_reps`] !== undefined ? savedData[`${item.id}_reps`] : item.reps;
 
-        // 좌측: 종목명 및 수정 가능 인풋
         let leftHtml = `<div class="exercise-left">
           <span class="exercise-name">${item.name}</span>
           <div class="exercise-inputs">`;
@@ -211,7 +228,6 @@
         }
         leftHtml += `</div></div>`;
 
-        // 우측: 회차별 체크박스 생성
         let rightHtml = `<div class="exercise-right">`;
         for (let c = 1; c <= item.checks; c++) {
           const checkKey = `${item.id}_check_${c}`;
@@ -233,9 +249,7 @@
     renderRows('routineTable', defaultRoutine);
     renderRows('tabataTable', defaultTabata, true);
 
-    // 당일 변경사항 이벤트 처리 (수정 값 및 체크 상태 저장)
     if (isToday) {
-      // 체크박스 클릭 시
       document.querySelectorAll('.checkbox-label input').forEach(input => {
         input.onchange = (e) => {
           const id = e.target.getAttribute('data-id');
@@ -244,7 +258,6 @@
 
           savedData[`${id}_check_${checkNum}`] = isChecked;
 
-          // 실제 입력되어 있는 무게 및 횟수를 당시 기록으로 함께 저장
           const weightInput = document.querySelector(`.${id}-weight`);
           const repsInput = document.querySelector(`.${id}-reps`);
           
@@ -256,7 +269,6 @@
         };
       });
 
-      // 무게/횟수 텍스트 수정 시 자동 저장
       document.querySelectorAll('.input-field').forEach(input => {
         input.onchange = () => {
           defaultRoutine.concat(defaultTabata).forEach(item => {
