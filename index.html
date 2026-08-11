@@ -7,7 +7,6 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   
-  /* 100dvh 적용으로 모바일 주소창 영향 최소화 */
   body { 
     background-color: #f1f5f9; 
     color: #0f172a; 
@@ -18,7 +17,7 @@
     overflow: hidden; 
   }
   
-  /* 상단 달력 영역: 유연한 높이 및 여백 축소 */
+  /* 상단 달력 영역 */
   .calendar-container { 
     background: #ffffff; 
     padding: 8px 12px; 
@@ -40,7 +39,7 @@
   .mark-o { color: #16a34a; }
   .mark-x { color: #dc2626; }
 
-  /* 하단 운동 리스트 영역: 남은 공간 전체 차지 및 자동 스크롤 */
+  /* 하단 운동 리스트 영역 */
   .routine-container { 
     flex: 1; 
     padding: 10px 12px; 
@@ -54,7 +53,6 @@
   
   .section-title { font-size: 0.75rem; font-weight: 700; color: #475569; margin: 8px 0 4px 0; text-transform: uppercase; }
   
-  /* 표 컴팩트화 */
   .exercise-table { width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 4px; }
   .exercise-row { border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; }
   .exercise-row:last-child { border-bottom: none; }
@@ -106,13 +104,13 @@
     { id: 'leg', name: '레그프레스', weight: 70, reps: 16, unit: '회', checks: 3 },
     { id: 'pulley', name: '하이풀리', weight: 20, reps: 17, unit: '회', checks: 3 },
     { id: 'chest', name: '시티드 체스트프레스', weight: 25, reps: 17, unit: '회', checks: 3 },
-    { id: 'shoulder', name: '숄더프레스 머신', weight: 15, reps: '8', unit: '회', checks: 6 },
+    { id: 'shoulder', name: '숄더프레스 머신', weight: 15, reps: '8+7', unit: '회', checks: 6 },
     { id: 'abs', name: '업도미널', weight: 70, reps: 20, unit: '회', checks: 3 },
     { id: 'cardio', name: 'Zone 2 유산소', weight: 0, reps: 40, unit: '분', checks: 1 }
   ];
 
   const defaultTabata = [
-    { id: 'tabata', name: '타바타 트레이닝', weight: 0, reps: 20, unit: '분', checks: 1 }
+    { id: 'tabata', name: '타바타 트레이닝', weight: 0, reps: 10, unit: '분', checks: 1 }
   ];
 
   let currentDate = new Date();
@@ -173,7 +171,9 @@
       cell.appendChild(numEl);
 
       const savedData = loadData(cellDateStr);
-      const isCheckedAny = Object.keys(savedData).some(k => k.endsWith('_check') && savedData[k] === true);
+      
+      // [오류 수정 포인트]: 키 이름 구애받지 않고 체크박스 값이 true인 항목이 하나라도 있는지 완전 검증
+      const isCheckedAny = Object.entries(savedData).some(([key, val]) => key.includes('_check_') && val === true);
 
       const markEl = document.createElement('div');
       markEl.className = 'status-mark';
