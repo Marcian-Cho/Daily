@@ -7,7 +7,6 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   
-  /* 화면 전체 높이를 기기 화면에 맞게 완전히 고정 */
   html, body { 
     width: 100%; 
     height: 100vh; 
@@ -22,7 +21,6 @@
     flex-direction: column; 
   }
   
-  /* 상단 달력: 화면 크기에 맞춰 고정 */
   .calendar-container { 
     background: #ffffff; 
     padding: 8px 12px; 
@@ -37,14 +35,13 @@
   
   .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
   .day-name { font-size: 0.7rem; font-weight: 700; color: #64748b; padding-bottom: 2px; }
-  .day-cell { border-radius: 6px; border: 1px solid #f1f5f9; background: #fafafa; display: flex; flex-direction: column; align-items: center; justify-space-between; padding: 2px 1px; cursor: pointer; min-height: 36px; }
+  .day-cell { border-radius: 6px; border: 1px solid #f1f5f9; background: #fafafa; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 2px 1px; cursor: pointer; min-height: 36px; }
   .day-cell.today { border: 2px solid #2563eb; background: #eff6ff; }
   .day-number { font-size: 0.75rem; font-weight: 600; }
   .status-mark { font-size: 0.95rem; font-weight: 900; line-height: 1; }
   .mark-o { color: #16a34a; }
   .mark-x { color: #dc2626; }
 
-  /* 하단 운동 리스트 */
   .routine-container { 
     flex: 1 1 auto; 
     height: 0; 
@@ -82,7 +79,6 @@
 </head>
 <body>
 
-<!-- 상단: 달력 영역 -->
 <div class="calendar-container">
   <div class="calendar-header">
     <button id="prevMonth">&lt;</button>
@@ -92,7 +88,6 @@
   <div class="calendar-grid" id="calendarGrid"></div>
 </div>
 
-<!-- 하단: 독립 스크롤 운동 리스트 영역 -->
 <div class="routine-container">
   <div class="date-title" id="selectedDateTitle">오늘의 운동</div>
   <div id="readOnlyNotice" class="read-only-notice" style="display:none;">⚠️ 지나간 기록/미래 일자는 수정할 수 없습니다. (조회 전용)</div>
@@ -112,7 +107,6 @@
 </div>
 
 <script>
-  // 숄더프레스 머신 reps: 12, checks: 3으로 수정 적용
   const defaultRoutine = [
     { id: 'leg', name: '레그프레스', weight: 70, reps: 16, unit: '회', checks: 3 },
     { id: 'pulley', name: '하이풀리', weight: 20, reps: 17, unit: '회', checks: 3 },
@@ -154,6 +148,24 @@
     renderCalendar();
   }
 
+  // 선택한 날짜 이전 중에서 가장 최근에 저장된 무게/횟수를 찾아오는 함수
+  function getLatestSavedValue(itemId, fieldType, defaultVal) {
+    const keys = Object.keys(localStorage)
+      .filter(k => k.startsWith('workout_v2_'))
+      .map(k => k.replace('workout_v2_', ''))
+      .filter(dStr => dStr <= selectedDateStr)
+      .sort()
+      .reverse();
+
+    for (let dStr of keys) {
+      const data = loadData(dStr);
+      if (data[`${itemId}_${fieldType}`] !== undefined) {
+        return data[`${itemId}_${fieldType}`];
+      }
+    }
+    return defaultVal;
+  }
+
   function renderCalendar() {
     const year = viewDate.getFullYear();
     const month = viewDate.getMonth();
@@ -190,7 +202,6 @@
 
       const savedData = loadData(cellDateStr);
       
-      // 체크박스가 하나라도 체크되었는지 판단하는 로직으로 변경
       let hasAnyCheck = false;
       allExercises.forEach(item => {
         for (let c = 1; c <= item.checks; c++) {
@@ -239,8 +250,14 @@
         const row = document.createElement('div');
         row.className = 'exercise-row ' + rowType;
 
-        const weightVal = savedData[`${item.id}_weight`] !== undefined ? savedData[`${item.id}_weight`] : item.weight;
-        const repsVal = savedData[`${item.id}_reps`] !== undefined ? savedData[`${item.id}_reps`] : item.reps;
+        // 현재 날짜에 저장된 데이터가 없으면 '가장 최근에 저장했던 데이터'를 찾아 가져옴
+        const weightVal = savedData[`${item.id}_weight`] !== undefined 
+          ? savedData[`${item.id}_weight`] 
+          : getLatestSavedValue(item.id, 'weight', item.weight);
+
+        const repsVal = savedData[`${item.id}_reps`] !== undefined 
+          ? savedData[`${item.id}_reps`] 
+          : getLatestSavedValue(item.id, 'reps', item.reps);
 
         let leftHtml = `<div class="exercise-left">
           <span class="exercise-name">${item.name}</span>
@@ -285,11 +302,13 @@
 
           savedData[`${id}_check_${checkNum}`] = isChecked;
 
-          const weightInput = document.querySelector(`.${id}-weight`);
-          const repsInput = document.querySelector(`.${id}-reps`);
-          
-          if (weightInput) savedData[`${id}_weight`] = weightInput.value;
-          if (repsInput) savedData[`${id}_reps`] = repsInput.value;
+          // 체크 클릭 시 현재 화면에 입력된 무게와 횟수도 함께 저장
+          allExercises.forEach(item => {
+            const weightEl = document.querySelector(`.${item.id}-weight`);
+            const repsEl = document.querySelector(`.${item.id}-reps`);
+            if (weightEl) savedData[`${item.id}_weight`] = weightEl.value;
+            if (repsEl) savedData[`${item.id}_reps`] = repsEl.value;
+          });
 
           saveData(selectedDateStr, savedData);
           renderRoutine();
