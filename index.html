@@ -2,26 +2,27 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>일일 운동 체크시트</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   
-  html, body {
-    width: 100%;
-    height: 100%;
-    height: 100dvh;
-    overflow: hidden;
+  /* 화면 전체 높이를 기기 화면에 맞게 완전히 고정 */
+  html, body { 
+    width: 100%; 
+    height: 100vh; 
+    height: 100dvh; 
+    overflow: hidden; 
+    background-color: #f1f5f9; 
+    color: #0f172a; 
   }
 
   body { 
-    background-color: #f1f5f9; 
-    color: #0f172a; 
     display: flex; 
     flex-direction: column; 
   }
   
-  /* 상단 달력 (고정) */
+  /* 상단 달력: 화면 크기에 맞춰 고정 (줄어들거나 늘어나지 않음) */
   .calendar-container { 
     background: #ffffff; 
     padding: 8px 12px; 
@@ -43,15 +44,14 @@
   .mark-o { color: #16a34a; }
   .mark-x { color: #dc2626; }
 
-  /* 하단 운동 리스트 (독립 스크롤 영역) */
+  /* 하단 운동 리스트: 남은 공간을 높이로 가지며 세로 스크롤 허용 */
   .routine-container { 
-    flex: 1; 
-    padding: 10px 12px 20px 12px; 
-    overflow-y: auto; 
-    -webkit-overflow-scrolling: touch;
+    flex: 1 1 auto; 
+    height: 0; /* flex 자식의 overflow 높이 계산을 위한 핵심 설정 */
+    padding: 10px 12px 30px 12px; 
+    overflow-y: scroll; 
+    -webkit-overflow-scrolling: touch; 
     background: #f8fafc; 
-    display: flex;
-    flex-direction: column;
   }
   .date-title { font-size: 0.9rem; font-weight: 700; color: #2563eb; margin-bottom: 6px; }
   .read-only-notice { font-size: 0.7rem; color: #ef4444; font-weight: 600; margin-bottom: 6px; }
@@ -82,7 +82,7 @@
 </head>
 <body>
 
-<!-- 상단 달력 -->
+<!-- 상단: 달력 영역 -->
 <div class="calendar-container">
   <div class="calendar-header">
     <button id="prevMonth">&lt;</button>
@@ -92,7 +92,7 @@
   <div class="calendar-grid" id="calendarGrid"></div>
 </div>
 
-<!-- 하단 운동 리스트 -->
+<!-- 하단: 독립 스크롤 운동 리스트 영역 -->
 <div class="routine-container">
   <div class="date-title" id="selectedDateTitle">오늘의 운동</div>
   <div id="readOnlyNotice" class="read-only-notice" style="display:none;">⚠️ 지나간 기록/미래 일자는 수정할 수 없습니다. (조회 전용)</div>
