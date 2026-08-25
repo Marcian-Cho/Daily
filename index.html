@@ -22,7 +22,7 @@
     flex-direction: column; 
   }
   
-  /* 상단 달력: 화면 크기에 맞춰 고정 (줄어들거나 늘어나지 않음) */
+  /* 상단 달력: 화면 크기에 맞춰 고정 */
   .calendar-container { 
     background: #ffffff; 
     padding: 8px 12px; 
@@ -37,17 +37,17 @@
   
   .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
   .day-name { font-size: 0.7rem; font-weight: 700; color: #64748b; padding-bottom: 2px; }
-  .day-cell { border-radius: 6px; border: 1px solid #f1f5f9; background: #fafafa; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 2px 1px; cursor: pointer; min-height: 36px; }
+  .day-cell { border-radius: 6px; border: 1px solid #f1f5f9; background: #fafafa; display: flex; flex-direction: column; align-items: center; justify-space-between; padding: 2px 1px; cursor: pointer; min-height: 36px; }
   .day-cell.today { border: 2px solid #2563eb; background: #eff6ff; }
   .day-number { font-size: 0.75rem; font-weight: 600; }
   .status-mark { font-size: 0.95rem; font-weight: 900; line-height: 1; }
   .mark-o { color: #16a34a; }
   .mark-x { color: #dc2626; }
 
-  /* 하단 운동 리스트: 남은 공간을 높이로 가지며 세로 스크롤 허용 */
+  /* 하단 운동 리스트 */
   .routine-container { 
     flex: 1 1 auto; 
-    height: 0; /* flex 자식의 overflow 높이 계산을 위한 핵심 설정 */
+    height: 0; 
     padding: 10px 12px 30px 12px; 
     overflow-y: scroll; 
     -webkit-overflow-scrolling: touch; 
@@ -112,11 +112,12 @@
 </div>
 
 <script>
+  // 숄더프레스 머신 reps: 12, checks: 3으로 수정 적용
   const defaultRoutine = [
     { id: 'leg', name: '레그프레스', weight: 70, reps: 16, unit: '회', checks: 3 },
     { id: 'pulley', name: '하이풀리', weight: 20, reps: 17, unit: '회', checks: 3 },
     { id: 'chest', name: '시티드 체스트프레스', weight: 25, reps: 17, unit: '회', checks: 3 },
-    { id: 'shoulder', name: '숄더프레스 머신', weight: 15, reps: '8+7', unit: '회', checks: 6 },
+    { id: 'shoulder', name: '숄더프레스 머신', weight: 15, reps: 12, unit: '회', checks: 3 },
     { id: 'abs', name: '업도미널', weight: 70, reps: 20, unit: '회', checks: 3 }
   ];
 
@@ -189,25 +190,22 @@
 
       const savedData = loadData(cellDateStr);
       
-      let totalChecksCount = 0;
-      let checkedCount = 0;
-
+      // 체크박스가 하나라도 체크되었는지 판단하는 로직으로 변경
+      let hasAnyCheck = false;
       allExercises.forEach(item => {
         for (let c = 1; c <= item.checks; c++) {
-          totalChecksCount++;
           if (savedData[`${item.id}_check_${c}`] === true) {
-            checkedCount++;
+            hasAnyCheck = true;
+            break;
           }
         }
       });
-
-      const isAllChecked = (totalChecksCount > 0 && totalChecksCount === checkedCount);
 
       const markEl = document.createElement('div');
       markEl.className = 'status-mark';
 
       if (cellDateStr <= todayStr) {
-        if (isAllChecked) {
+        if (hasAnyCheck) {
           markEl.innerText = 'O';
           markEl.classList.add('mark-o');
         } else {
