@@ -43,8 +43,7 @@
     .input-field:focus { border-color: #2563eb; background: #ffffff; outline: none; }
     .exercise-right { display: flex; gap: 3px; align-items: center; justify-content: flex-end; flex-shrink: 0; }
     
-    /* 웨이트 및 준비/마무리 공통 체크박스 스타일 (이름과 한 줄 정렬) */
-    .checkbox-label { display: flex; align-items: center; justify-content: center; min-width: 32px; height: 22px; padding: 0 6px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer; font-size: 0.65rem; font-weight: 700; color: #64748b; }
+    .checkbox-label { display: flex; align-items: center; justify-content: center; min-width: 36px; height: 22px; padding: 0 6px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer; font-size: 0.65rem; font-weight: 700; color: #64748b; }
     .checkbox-label input { display: none; }
     .checkbox-label.checked { background: #0284c7; color: #ffffff; border-color: #0284c7; }
     
@@ -411,7 +410,6 @@
 
       const savedData = loadData(selectedDateStr);
 
-      // 준비/마무리 운동을 웨이트처럼 우측에 '대기/완료' 버튼 형태로 한 줄 나열하는 렌더링 함수
       const renderInlineCheckRows = (targetId, items, rowType = '') => {
         const container = document.getElementById(targetId);
         container.innerHTML = '';
