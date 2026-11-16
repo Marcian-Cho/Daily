@@ -476,6 +476,7 @@
 
       const renderInlineCheckRows = (targetId, items, rowType = '') => {
         const container = document.getElementById(targetId);
+        if (!container) return;
         container.className = `exercise-table inline-check-list ${rowType}`;
         container.innerHTML = '';
 
@@ -503,6 +504,7 @@
 
       const renderRows = (targetId, items, rowType = '') => {
         const container = document.getElementById(targetId);
+        if (!container) return;
         container.innerHTML = '';
 
         items.forEach(item => {
