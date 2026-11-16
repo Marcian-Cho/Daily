@@ -393,6 +393,9 @@
           const distEl = document.querySelector(`.${item.id}-distance`);
           if (timeEl) targetData[`${item.id}_time`] = timeEl.value;
           if (distEl) targetData[`${item.id}_distance`] = distEl.value;
+        } else if (item.id === 'cardio') {
+          const repsEl = document.querySelector(`.${item.id}-reps`);
+          if (repsEl) targetData[`${item.id}_reps`] = repsEl.value;
         } else if (item.weight !== undefined || item.reps !== undefined) {
           const weightEl = document.querySelector(`.${item.id}-weight`);
           const repsEl = document.querySelector(`.${item.id}-reps`);
@@ -463,4 +466,113 @@
             leftHtml += `<input type="text" class="input-field ${item.id}-reps" value="${repsVal}" ${!isEditable ? 'disabled' : ''}> ${item.unit}`;
           } else if (item.weight !== undefined) {
             const weightVal = savedData[`${item.id}_weight`] !== undefined ? savedData[`${item.id}_weight`] : getLatestSavedValue(item.id, 'weight', item.weight);
-            const repsVal = savedData[`${item.id}_reps`] !==
+            const repsVal = savedData[`${item.id}_reps`] !== undefined ? savedData[`${item.id}_reps`] : getLatestSavedValue(item.id, 'reps', item.reps);
+            leftHtml += `<input type="text" class="input-field ${item.id}-weight" value="${weightVal}" ${!isEditable ? 'disabled' : ''}> kg · <input type="text" class="input-field ${item.id}-reps" value="${repsVal}" ${!isEditable ? 'disabled' : ''}> ${item.unit}`;
+          }
+
+          leftHtml += `</div></div>`;
+
+          let rightHtml = `<div class="exercise-right">`;
+          for (let c = 1; c <= item.checks; c++) {
+            const checkKey = `${item.id}_check_${c}`;
+            const isChecked = savedData[checkKey] || false;
+            rightHtml += `
+              <label class="checkbox-label ${isChecked ? 'checked' : ''}">
+                ${item.checks > 1 ? c : '✓'}
+                <input type="checkbox" data-id="${item.id}" data-check="${c}" ${isChecked ? 'checked' : ''} ${!isEditable ? 'disabled' : ''}>
+              </label>
+            `;
+          }
+          rightHtml += `</div>`;
+
+          row.innerHTML = leftHtml + rightHtml;
+          container.appendChild(row);
+        });
+      };
+
+      renderToggleRows('warmupTable', defaultWarmup);
+      renderRows('routineTable', defaultRoutine);
+      renderRows('cardioTable', defaultCardio, 'cardio-row');
+      renderRows('runningTable', defaultRunning, 'running-row');
+      renderToggleRows('cooldownTable', defaultCooldown);
+
+      if (isEditable) {
+        document.querySelectorAll('.checkbox-label input').forEach(input => {
+          input.onchange = (e) => {
+            const id = e.target.getAttribute('data-id');
+            const checkNum = e.target.getAttribute('data-check');
+            savedData[`${id}_check_${checkNum}`] = e.target.checked;
+            syncAllInputsToData(savedData);
+            saveData(selectedDateStr, savedData);
+            renderRoutine();
+          };
+        });
+
+        document.querySelectorAll('.input-field').forEach(input => {
+          input.onchange = () => {
+            syncAllInputsToData(savedData);
+            saveData(selectedDateStr, savedData);
+          };
+        });
+      }
+    }
+
+    document.getElementById('exportBtn').onclick = () => {
+      const backupData = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(STORAGE_PREFIX)) {
+          backupData[key] = localStorage.getItem(key);
+        }
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `workout_backup_${getFormattedDate(new Date())}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    };
+
+    document.getElementById('importBtn').onclick = () => {
+      document.getElementById('importFile').click();
+    };
+
+    document.getElementById('importFile').onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        try {
+          const backupData = JSON.parse(event.target.result);
+          for (let key in backupData) {
+            if (key.startsWith(STORAGE_PREFIX)) {
+              localStorage.setItem(key, backupData[key]);
+            }
+          }
+          alert("운동 기록이 성공적으로 복원되었습니다!");
+          renderCalendar();
+          renderRoutine();
+        } catch (err) {
+          alert("백업 파일 형식이 올바르지 않습니다.");
+        }
+      };
+      reader.readAsText(file);
+    };
+
+    document.getElementById('prevMonth').onclick = () => {
+      viewDate.setMonth(viewDate.getMonth() - 1);
+      renderCalendar();
+    };
+
+    document.getElementById('nextMonth').onclick = () => {
+      viewDate.setMonth(viewDate.getMonth() + 1);
+      renderCalendar();
+    };
+
+    checkDetrainingAndAdjust();
+    renderCalendar();
+    renderRoutine();
+  </script>
+</body>
+</html>
