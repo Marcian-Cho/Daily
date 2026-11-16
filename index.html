@@ -56,6 +56,62 @@
     .running-row .checkbox-label.checked { background: #ea580c; border-color: #ea580c; }
     .cooldown-row { background: #fdf4ff; }
     .cooldown-row .checkbox-label.checked { background: #9333ea; border-color: #9333ea; }
+
+    /* 준비운동·마무리운동: 운동명 자체를 누르는 한 줄 가로 체크 목록 */
+    .exercise-table.inline-check-list {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      padding: 8px;
+      overflow: visible;
+    }
+    .inline-exercise {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+    }
+    .inline-exercise-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 32px;
+      padding: 5px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #334155;
+      font-size: 0.72rem;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .inline-exercise-button input { display: none; }
+    .inline-exercise-button.checked {
+      color: #ffffff;
+      background: #16a34a;
+      border-color: #16a34a;
+      text-decoration: line-through;
+    }
+    .warmup-row .inline-exercise-button.checked {
+      background: #0284c7;
+      border-color: #0284c7;
+    }
+    .cooldown-row .inline-exercise-button.checked {
+      background: #9333ea;
+      border-color: #9333ea;
+    }
+    .inline-exercise-button:focus-within {
+      outline: 2px solid #2563eb;
+      outline-offset: 2px;
+    }
+    .inline-exercise-button.disabled {
+      opacity: 0.65;
+      cursor: default;
+    }
   </style>
 </head>
 <body>
@@ -152,6 +208,9 @@
     ];
 
     const allExercises = [...defaultWarmup, ...defaultRoutine, ...defaultCardio, ...defaultRunning, ...defaultCooldown];
+    // 운동 공백 판단에는 실제 웨이트·유산소·러닝만 반영하고,
+    // 준비운동·마무리운동 체크만으로 공백 기간이 초기화되지 않도록 분리한다.
+    const trainingExercises = [...defaultRoutine, ...defaultCardio, ...defaultRunning];
 
     let currentDate = new Date();
     let viewDate = new Date();
@@ -168,7 +227,14 @@
 
     function loadData(dateStr) {
       const data = localStorage.getItem(STORAGE_PREFIX + dateStr);
-      return data ? JSON.parse(data) : {};
+      if (!data) return {};
+      try {
+        const parsed = JSON.parse(data);
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+      } catch (error) {
+        console.warn(`운동 기록을 읽지 못했습니다: ${dateStr}`, error);
+        return {};
+      }
     }
 
     function saveData(dateStr, data) {
@@ -210,7 +276,7 @@
       for (let dStr of pastKeys) {
         const data = loadData(dStr);
         let hasCheck = false;
-        allExercises.forEach(item => {
+        trainingExercises.forEach(item => {
           for (let c = 1; c <= item.checks; c++) {
             if (data[`${item.id}_check_${c}`] === true) hasCheck = true;
           }
@@ -412,25 +478,28 @@
 
       const renderInlineCheckRows = (targetId, items, rowType = '') => {
         const container = document.getElementById(targetId);
+        container.className = `exercise-table inline-check-list ${rowType}`;
         container.innerHTML = '';
 
         items.forEach(item => {
-          const isChecked = savedData[`${item.id}_check_1`] || false;
-          const row = document.createElement('div');
-          row.className = 'exercise-row ' + rowType;
+          const isChecked = savedData[`${item.id}_check_1`] === true;
+          const itemEl = document.createElement('div');
+          itemEl.className = 'inline-exercise';
 
-          row.innerHTML = `
-            <div class="exercise-left">
-              <span class="exercise-name" style="${isChecked ? 'color: #16a34a; text-decoration: line-through;' : ''}">${item.name}</span>
-            </div>
-            <div class="exercise-right">
-              <label class="checkbox-label ${isChecked ? 'checked' : ''}">
-                ${isChecked ? '완료' : '대기'}
-                <input type="checkbox" data-id="${item.id}" data-check="1" ${isChecked ? 'checked' : ''} ${!isEditable ? 'disabled' : ''}>
-              </label>
-            </div>
-          `;
-          container.appendChild(row);
+          const nameLabel = document.createElement('label');
+          nameLabel.className = `inline-exercise-button${isChecked ? ' checked' : ''}${!isEditable ? ' disabled' : ''}`;
+          nameLabel.textContent = item.name;
+
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.dataset.id = item.id;
+          checkbox.dataset.check = '1';
+          checkbox.checked = isChecked;
+          checkbox.disabled = !isEditable;
+
+          nameLabel.appendChild(checkbox);
+          itemEl.appendChild(nameLabel);
+          container.appendChild(itemEl);
         });
       };
 
@@ -488,7 +557,7 @@
       renderInlineCheckRows('cooldownTable', defaultCooldown, 'cooldown-row');
 
       if (isEditable) {
-        document.querySelectorAll('.checkbox-label input').forEach(input => {
+        document.querySelectorAll('input[type="checkbox"][data-id]').forEach(input => {
           input.onchange = (e) => {
             const id = e.target.getAttribute('data-id');
             const checkNum = e.target.getAttribute('data-check');
