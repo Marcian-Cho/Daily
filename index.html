@@ -30,7 +30,7 @@
     .routine-container { flex: 1 1 auto; height: 0; padding: 10px 12px 30px 12px; overflow-y: scroll; -webkit-overflow-scrolling: touch; background: #f8fafc; }
     .date-title { font-size: 0.9rem; font-weight: 700; color: #2563eb; margin-bottom: 6px; }
     .read-only-notice { font-size: 0.7rem; color: #ef4444; font-weight: 600; margin-bottom: 6px; }
-    .section-title { font-size: 0.75rem; font-weight: 700; color: #475569; margin: 8px 0 4px 0; text-transform: uppercase; }
+    .section-title { font-size: 0.75rem; font-weight: 700; color: #475569; margin: 10px 0 4px 0; text-transform: uppercase; }
 
     .exercise-table { width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 4px; }
     .exercise-row { border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; }
@@ -47,7 +47,8 @@
     .checkbox-label input { display: none; }
     .checkbox-label.checked { background: #0284c7; color: #ffffff; border-color: #0284c7; }
     
-    hr.divider { border: 0; height: 1px; background: #cbd5e1; margin: 8px 0; }
+    hr.divider { border: 0; height: 1px; background: #cbd5e1; margin: 10px 0; }
+    hr.major-divider { border: 0; height: 3px; background: #94a3b8; margin: 14px 0; border-radius: 2px; }
 
     .warmup-row { background: #f8fafc; }
     .cardio-row { background: #f0fdf4; }
@@ -57,7 +58,6 @@
     .cooldown-row { background: #fdf4ff; }
     .cooldown-row .checkbox-label.checked { background: #9333ea; border-color: #9333ea; }
 
-    /* 준비운동·마무리운동: 운동명 자체를 누르는 한 줄 가로 체크 목록 */
     .exercise-table.inline-check-list {
       display: flex;
       flex-wrap: wrap;
@@ -143,7 +143,7 @@
     <div class="date-title" id="selectedDateTitle">오늘의 운동</div>
     <div id="readOnlyNotice" class="read-only-notice" style="display:none;">⚠️ 미래 일자는 미리 입력할 수 없습니다. (조회 전용)</div>
 
-    <div class="section-title">운동 전 준비운동 (10공정)</div>
+    <div class="section-title">🏋️‍♂️ 실내 운동 전 준비운동 (10공정)</div>
     <div class="exercise-table" id="warmupTable"></div>
     <hr class="divider">
 
@@ -151,16 +151,16 @@
     <div class="exercise-table" id="routineTable"></div>
     <hr class="divider">
     
-    <div class="section-title">유산소 (Cardio)</div>
+    <div class="section-title">실내 유산소 (Cardio)</div>
     <div class="exercise-table" id="cardioTable"></div>
     <hr class="divider">
-    
-    <div class="section-title">야외 러닝 (Running)</div>
-    <div class="exercise-table" id="runningTable"></div>
-    <hr class="divider">
 
-    <div class="section-title">운동 후 마무리 운동 (7공정)</div>
+    <div class="section-title">실내 운동 후 마무리 운동 (7공정)</div>
     <div class="exercise-table" id="cooldownTable"></div>
+
+    <hr class="major-divider">
+    <div class="section-title" style="color:#ea580c; font-size:0.8rem;">🏃‍♂️ 야외 트랙 / 공원 러닝 (별도 독립 세션)</div>
+    <div class="exercise-table" id="runningTable"></div>
   </div>
 
   <script>
@@ -208,9 +208,9 @@
     ];
 
     const allExercises = [...defaultWarmup, ...defaultRoutine, ...defaultCardio, ...defaultRunning, ...defaultCooldown];
-    // 운동 공백 판단에는 실제 웨이트·유산소·러닝만 반영하고,
-    // 준비운동·마무리운동 체크만으로 공백 기간이 초기화되지 않도록 분리한다.
-    const trainingExercises = [...defaultRoutine, ...defaultCardio, ...defaultRunning];
+    
+    // 웨이트 공백기 계산에는 오직 '실내 웨이트 루틴(defaultRoutine)'만 반영
+    const strengthExercises = [...defaultRoutine];
 
     let currentDate = new Date();
     let viewDate = new Date();
@@ -260,9 +260,18 @@
       return defaultVal;
     }
 
+    // 오늘 러닝만 기록했더라도 웨이트 공백기가 정확히 감지되도록 수정된 로직
     function checkDetrainingAndAdjust() {
       const todayData = loadData(todayStr);
-      if (Object.keys(todayData).length > 0) return;
+      
+      // 오늘 웨이트 관련 기록이 이미 조정되었거나 존재하면 중복 실행 방지
+      let hasTodayStrength = false;
+      strengthExercises.forEach(item => {
+        for (let c = 1; c <= item.checks; c++) {
+          if (todayData[`${item.id}_check_${c}`] === true) hasTodayStrength = true;
+        }
+      });
+      if (todayData._autoAdjusted || hasTodayStrength) return;
 
       const pastKeys = Object.keys(localStorage)
         .filter(k => k.startsWith(STORAGE_PREFIX))
@@ -271,50 +280,45 @@
         .sort()
         .reverse();
 
-      let lastWorkoutDateStr = null;
+      let lastStrengthDateStr = null;
 
       for (let dStr of pastKeys) {
         const data = loadData(dStr);
-        let hasCheck = false;
-        trainingExercises.forEach(item => {
+        let hasStrengthCheck = false;
+        strengthExercises.forEach(item => {
           for (let c = 1; c <= item.checks; c++) {
-            if (data[`${item.id}_check_${c}`] === true) hasCheck = true;
+            if (data[`${item.id}_check_${c}`] === true) hasStrengthCheck = true;
           }
         });
-        if (hasCheck) {
-          lastWorkoutDateStr = dStr;
+        if (hasStrengthCheck) {
+          lastStrengthDateStr = dStr;
           break;
         }
       }
 
-      if (!lastWorkoutDateStr) return;
+      if (!lastStrengthDateStr) return;
 
-      const lastDate = new Date(lastWorkoutDateStr + 'T00:00:00');
+      const lastDate = new Date(lastStrengthDateStr + 'T00:00:00');
       const todayDate = new Date(todayStr + 'T00:00:00');
       const diffDays = Math.floor((todayDate - lastDate) / (1000 * 60 * 60 * 24));
 
       if (diffDays >= 10) {
-        alert("운동량 부족으로 운동량을 조정합니다.");
+        alert("실내 웨이트 운동량 부족으로 운동량을 조정합니다.");
         const ratio = diffDays >= 21 ? 0.8 : 0.9;
-        const adjustedData = { _autoAdjusted: true };
+        
+        // 기존 오늘 데이터(러닝 등)를 유지하면서 웨이트 조정값 추가
+        const adjustedData = { ...todayData, _autoAdjusted: true };
 
         defaultRoutine.forEach(item => {
-          const prevWeight = Number(getLatestSavedValue(item.id, 'weight', item.weight, lastWorkoutDateStr));
-          const prevReps = getLatestSavedValue(item.id, 'reps', item.reps, lastWorkoutDateStr);
+          const prevWeight = Number(getLatestSavedValue(item.id, 'weight', item.weight, lastStrengthDateStr));
+          const prevReps = getLatestSavedValue(item.id, 'reps', item.reps, lastStrengthDateStr);
           adjustedData[`${item.id}_weight`] = Math.max(1, Math.round(prevWeight * ratio));
           adjustedData[`${item.id}_reps`] = prevReps;
         });
 
         defaultCardio.forEach(item => {
-          const prevReps = Number(getLatestSavedValue(item.id, 'reps', item.reps, lastWorkoutDateStr));
+          const prevReps = Number(getLatestSavedValue(item.id, 'reps', item.reps, lastStrengthDateStr));
           adjustedData[`${item.id}_reps`] = Math.max(5, Math.round(prevReps * ratio));
-        });
-
-        defaultRunning.forEach(item => {
-          const prevTime = Number(getLatestSavedValue(item.id, 'time', item.time, lastWorkoutDateStr));
-          const prevDist = Number(getLatestSavedValue(item.id, 'distance', item.distance, lastWorkoutDateStr));
-          adjustedData[`${item.id}_time`] = Math.max(5, Math.round(prevTime * ratio));
-          adjustedData[`${item.id}_distance`] = Math.max(0.5, Number((prevDist * ratio).toFixed(1)));
         });
 
         saveData(todayStr, adjustedData);
@@ -450,6 +454,7 @@
       renderTrendChart();
     }
 
+    // 입력 필드 클래스 오타(하이픈/언더바) 수정 반영
     function syncAllInputsToData(targetData) {
       allExercises.forEach(item => {
         if (item.id === 'running') {
@@ -462,7 +467,7 @@
           if (repsEl) targetData[`${item.id}_reps`] = repsEl.value;
         } else if (item.weight !== undefined || item.reps !== undefined) {
           const weightEl = document.querySelector(`.${item.id}-weight`);
-          const repsEl = document.querySelector(`.${item.id}-reps`);
+          const repsEl = document.querySelector(`.${item.id}_reps`); // _reps로 정확히 통일
           if (weightEl) targetData[`${item.id}_weight`] = weightEl.value;
           if (repsEl) targetData[`${item.id}_reps`] = repsEl.value;
         }
@@ -527,7 +532,7 @@
           } else if (item.weight !== undefined) {
             const weightVal = savedData[`${item.id}_weight`] !== undefined ? savedData[`${item.id}_weight`] : getLatestSavedValue(item.id, 'weight', item.weight);
             const repsVal = savedData[`${item.id}_reps`] !== undefined ? savedData[`${item.id}_reps`] : getLatestSavedValue(item.id, 'reps', item.reps);
-            leftHtml += `<input type="text" class="input-field ${item.id}-weight" value="${weightVal}" ${!isEditable ? 'disabled' : ''}> kg · <input type="text" class="input-field ${item.id}-reps" value="${repsVal}" ${!isEditable ? 'disabled' : ''}> ${item.unit}`;
+            leftHtml += `<input type="text" class="input-field ${item.id}-weight" value="${weightVal}" ${!isEditable ? 'disabled' : ''}> kg · <input type="text" class="input-field ${item.id}_reps" value="${repsVal}" ${!isEditable ? 'disabled' : ''}> ${item.unit}`;
           }
 
           leftHtml += `</div></div>`;
@@ -553,8 +558,8 @@
       renderInlineCheckRows('warmupTable', defaultWarmup, 'warmup-row');
       renderRows('routineTable', defaultRoutine);
       renderRows('cardioTable', defaultCardio, 'cardio-row');
-      renderRows('runningTable', defaultRunning, 'running-row');
       renderInlineCheckRows('cooldownTable', defaultCooldown, 'cooldown-row');
+      renderRows('runningTable', defaultRunning, 'running-row');
 
       if (isEditable) {
         document.querySelectorAll('input[type="checkbox"][data-id]').forEach(input => {
