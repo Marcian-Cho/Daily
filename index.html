@@ -260,6 +260,7 @@
 
     function renderTrendChart() {
       const box = document.getElementById('trendSvgBox');
+      if (!box) return;
       const year = viewDate.getFullYear();
       const month = viewDate.getMonth();
       const lastDate = new Date(year, month + 1, 0).getDate();
