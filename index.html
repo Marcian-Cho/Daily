@@ -41,24 +41,22 @@
     .exercise-inputs { display: flex; align-items: center; gap: 3px; font-size: 0.7rem; color: #64748b; }
     .input-field { width: 38px; padding: 1px 3px; font-size: 0.7rem; font-weight: 600; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; color: #1e293b; background: #f8fafc; }
     .input-field:focus { border-color: #2563eb; background: #ffffff; outline: none; }
-    .exercise-right { display: flex; gap: 3px; align-items: center; justify-content: flex-end; width: 45px; flex-shrink: 0; }
-    .checkbox-label { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer; font-size: 0.6rem; font-weight: 700; color: #64748b; }
+    .exercise-right { display: flex; gap: 3px; align-items: center; justify-content: flex-end; flex-shrink: 0; }
+    
+    /* 웨이트 및 준비/마무리 공통 체크박스 스타일 (이름과 한 줄 정렬) */
+    .checkbox-label { display: flex; align-items: center; justify-content: center; min-width: 32px; height: 22px; padding: 0 6px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer; font-size: 0.65rem; font-weight: 700; color: #64748b; }
     .checkbox-label input { display: none; }
-    .checkbox-label.checked { background: #2563eb; color: #ffffff; border-color: #2563eb; }
+    .checkbox-label.checked { background: #0284c7; color: #ffffff; border-color: #0284c7; }
+    
     hr.divider { border: 0; height: 1px; background: #cbd5e1; margin: 8px 0; }
 
-    /* 준비/마무리 운동 전체 터치형 행 스타일 */
-    .toggle-row { cursor: pointer; transition: background-color 0.15s; }
-    .toggle-row:hover { background-color: #f1f5f9; }
-    .toggle-row.checked-row { background-color: #f0fdf4; }
-    .toggle-row.checked-row .exercise-name { color: #16a34a; text-decoration: line-through; }
-    .toggle-badge { font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #64748b; }
-    .toggle-row.checked-row .toggle-badge { background: #16a34a; color: #ffffff; border-color: #16a34a; }
-
+    .warmup-row { background: #f8fafc; }
     .cardio-row { background: #f0fdf4; }
     .cardio-row .checkbox-label.checked { background: #16a34a; border-color: #16a34a; }
     .running-row { background: #fff7ed; }
     .running-row .checkbox-label.checked { background: #ea580c; border-color: #ea580c; }
+    .cooldown-row { background: #fdf4ff; }
+    .cooldown-row .checkbox-label.checked { background: #9333ea; border-color: #9333ea; }
   </style>
 </head>
 <body>
@@ -90,7 +88,7 @@
     <div class="date-title" id="selectedDateTitle">오늘의 운동</div>
     <div id="readOnlyNotice" class="read-only-notice" style="display:none;">⚠️ 미래 일자는 미리 입력할 수 없습니다. (조회 전용)</div>
 
-    <div class="section-title">운동 전 준비운동 (10공정) - 항목 터치 시 완료</div>
+    <div class="section-title">운동 전 준비운동 (10공정)</div>
     <div class="exercise-table" id="warmupTable"></div>
     <hr class="divider">
 
@@ -106,7 +104,7 @@
     <div class="exercise-table" id="runningTable"></div>
     <hr class="divider">
 
-    <div class="section-title">운동 후 마무리 운동 (7공정) - 항목 터치 시 완료</div>
+    <div class="section-title">운동 후 마무리 운동 (7공정)</div>
     <div class="exercise-table" id="cooldownTable"></div>
   </div>
 
@@ -413,33 +411,27 @@
 
       const savedData = loadData(selectedDateStr);
 
-      const renderToggleRows = (targetId, items) => {
+      // 준비/마무리 운동을 웨이트처럼 우측에 '대기/완료' 버튼 형태로 한 줄 나열하는 렌더링 함수
+      const renderInlineCheckRows = (targetId, items, rowType = '') => {
         const container = document.getElementById(targetId);
         container.innerHTML = '';
 
         items.forEach(item => {
           const isChecked = savedData[`${item.id}_check_1`] || false;
           const row = document.createElement('div');
-          row.className = `exercise-row toggle-row ${isChecked ? 'checked-row' : ''}`;
+          row.className = 'exercise-row ' + rowType;
 
           row.innerHTML = `
             <div class="exercise-left">
-              <span class="exercise-name">${item.name}</span>
+              <span class="exercise-name" style="${isChecked ? 'color: #16a34a; text-decoration: line-through;' : ''}">${item.name}</span>
             </div>
             <div class="exercise-right">
-              <span class="toggle-badge">${isChecked ? '완료' : '대기'}</span>
+              <label class="checkbox-label ${isChecked ? 'checked' : ''}">
+                ${isChecked ? '완료' : '대기'}
+                <input type="checkbox" data-id="${item.id}" data-check="1" ${isChecked ? 'checked' : ''} ${!isEditable ? 'disabled' : ''}>
+              </label>
             </div>
           `;
-
-          if (isEditable) {
-            row.onclick = () => {
-              const currentStatus = savedData[`${item.id}_check_1`] || false;
-              savedData[`${item.id}_check_1`] = !currentStatus;
-              syncAllInputsToData(savedData);
-              saveData(selectedDateStr, savedData);
-              renderRoutine();
-            };
-          }
           container.appendChild(row);
         });
       };
@@ -491,11 +483,11 @@
         });
       };
 
-      renderToggleRows('warmupTable', defaultWarmup);
+      renderInlineCheckRows('warmupTable', defaultWarmup, 'warmup-row');
       renderRows('routineTable', defaultRoutine);
       renderRows('cardioTable', defaultCardio, 'cardio-row');
       renderRows('runningTable', defaultRunning, 'running-row');
-      renderToggleRows('cooldownTable', defaultCooldown);
+      renderInlineCheckRows('cooldownTable', defaultCooldown, 'cooldown-row');
 
       if (isEditable) {
         document.querySelectorAll('.checkbox-label input').forEach(input => {
