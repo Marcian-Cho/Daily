@@ -1,346 +1,543 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>일일 운동 체크시트</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  
-  html, body { 
-    width: 100%; 
-    height: 100vh; 
-    height: 100dvh; 
-    overflow: hidden; 
-    background-color: #f1f5f9; 
-    color: #0f172a; 
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>일일 운동 체크시트</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    html, body { width: 100%; height: 100vh; height: 100dvh; overflow: hidden; background-color: #f1f5f9; color: #0f172a; }
+    body { display: flex; flex-direction: column; }
+    
+    .calendar-container { background: #ffffff; padding: 8px 12px; display: flex; flex-direction: column; border-bottom: 2px solid #cbd5e1; flex-shrink: 0; }
+    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .calendar-header h2 { font-size: 1rem; font-weight: 700; color: #1e293b; }
+    .header-btns { display: flex; gap: 4px; }
+    .calendar-header button { background: #f8fafc; border: 1px solid #cbd5e1; padding: 2px 8px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.75rem; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+    .day-name { font-size: 0.7rem; font-weight: 700; color: #64748b; padding-bottom: 2px; }
+    .day-cell { border-radius: 6px; border: 1px solid #f1f5f9; background: #fafafa; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 2px 1px; cursor: pointer; min-height: 36px; }
+    .day-cell.today { border: 2px solid #2563eb; background: #eff6ff; }
+    .day-number { font-size: 0.75rem; font-weight: 600; }
+    .status-mark { font-size: 0.95rem; font-weight: 900; line-height: 1; }
+    .mark-o { color: #16a34a; }
+    .mark-x { color: #dc2626; }
 
-  body { 
-    display: flex; 
-    flex-direction: column; 
-  }
-  
-  .calendar-container { 
-    background: #ffffff; 
-    padding: 8px 12px; 
-    display: flex; 
-    flex-direction: column; 
-    border-bottom: 2px solid #cbd5e1; 
-    flex-shrink: 0; 
-  }
-  .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-  .calendar-header h2 { font-size: 1rem; font-weight: 700; color: #1e293b; }
-  .calendar-header button { background: #f8fafc; border: 1px solid #cbd5e1; padding: 2px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; }
-  
-  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
-  .day-name { font-size: 0.7rem; font-weight: 700; color: #64748b; padding-bottom: 2px; }
-  .day-cell { border-radius: 6px; border: 1px solid #f1f5f9; background: #fafafa; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 2px 1px; cursor: pointer; min-height: 36px; }
-  .day-cell.today { border: 2px solid #2563eb; background: #eff6ff; }
-  .day-number { font-size: 0.75rem; font-weight: 600; }
-  .status-mark { font-size: 0.95rem; font-weight: 900; line-height: 1; }
-  .mark-o { color: #16a34a; }
-  .mark-x { color: #dc2626; }
+    .trend-container { background: #ffffff; padding: 6px 12px; border-bottom: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+    .trend-title { font-size: 0.7rem; font-weight: 700; color: #475569; display: flex; justify-content: space-between; }
+    .trend-svg-box { width: 100%; height: 32px; display: flex; align-items: center; }
 
-  .routine-container { 
-    flex: 1 1 auto; 
-    height: 0; 
-    padding: 10px 12px 30px 12px; 
-    overflow-y: scroll; 
-    -webkit-overflow-scrolling: touch; 
-    background: #f8fafc; 
-  }
-  .date-title { font-size: 0.9rem; font-weight: 700; color: #2563eb; margin-bottom: 6px; }
-  .read-only-notice { font-size: 0.7rem; color: #ef4444; font-weight: 600; margin-bottom: 6px; }
-  
-  .section-title { font-size: 0.75rem; font-weight: 700; color: #475569; margin: 8px 0 4px 0; text-transform: uppercase; }
-  
-  .exercise-table { width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 4px; }
-  .exercise-row { border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; }
-  .exercise-row:last-child { border-bottom: none; }
-  
-  .exercise-left { display: flex; flex-direction: column; gap: 2px; flex: 1; padding-right: 6px; }
-  .exercise-name { font-size: 0.8rem; font-weight: 700; color: #0f172a; }
-  .exercise-sub { font-size: 0.65rem; color: #16a34a; font-weight: 600; margin-top: -1px; }
-  .exercise-inputs { display: flex; align-items: center; gap: 3px; font-size: 0.7rem; color: #64748b; }
-  .input-field { width: 38px; padding: 1px 3px; font-size: 0.7rem; font-weight: 600; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; color: #1e293b; background: #f8fafc; }
-  .input-field:focus { border-color: #2563eb; background: #ffffff; outline: none; }
+    .routine-container { flex: 1 1 auto; height: 0; padding: 10px 12px 30px 12px; overflow-y: scroll; -webkit-overflow-scrolling: touch; background: #f8fafc; }
+    .date-title { font-size: 0.9rem; font-weight: 700; color: #2563eb; margin-bottom: 6px; }
+    .read-only-notice { font-size: 0.7rem; color: #ef4444; font-weight: 600; margin-bottom: 6px; }
+    .section-title { font-size: 0.75rem; font-weight: 700; color: #475569; margin: 8px 0 4px 0; text-transform: uppercase; }
 
-  .exercise-right { display: flex; gap: 3px; align-items: center; justify-content: flex-end; width: 145px; flex-shrink: 0; }
-  .checkbox-label { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer; font-size: 0.6rem; font-weight: 700; color: #64748b; }
-  .checkbox-label input { display: none; }
-  .checkbox-label.checked { background: #2563eb; color: #ffffff; border-color: #2563eb; }
-  
-  hr.divider { border: 0; height: 1px; background: #cbd5e1; margin: 8px 0; }
-  .cardio-row { background: #f0fdf4; }
-  .cardio-row .checkbox-label.checked { background: #16a34a; border-color: #16a34a; }
-  .tabata-row { background: #fff7ed; }
-  .tabata-row .checkbox-label.checked { background: #ea580c; border-color: #ea580c; }
-</style>
+    .exercise-table { width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 4px; }
+    .exercise-row { border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; }
+    .exercise-row:last-child { border-bottom: none; }
+    .exercise-left { display: flex; flex-direction: column; gap: 2px; flex: 1; padding-right: 6px; }
+    .exercise-name { font-size: 0.8rem; font-weight: 700; color: #0f172a; }
+    .exercise-sub { font-size: 0.65rem; color: #16a34a; font-weight: 600; margin-top: -1px; }
+    .exercise-inputs { display: flex; align-items: center; gap: 3px; font-size: 0.7rem; color: #64748b; }
+    .input-field { width: 38px; padding: 1px 3px; font-size: 0.7rem; font-weight: 600; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; color: #1e293b; background: #f8fafc; }
+    .input-field:focus { border-color: #2563eb; background: #ffffff; outline: none; }
+    .exercise-right { display: flex; gap: 3px; align-items: center; justify-content: flex-end; width: 45px; flex-shrink: 0; }
+    .checkbox-label { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; cursor: pointer; font-size: 0.6rem; font-weight: 700; color: #64748b; }
+    .checkbox-label input { display: none; }
+    .checkbox-label.checked { background: #2563eb; color: #ffffff; border-color: #2563eb; }
+    hr.divider { border: 0; height: 1px; background: #cbd5e1; margin: 8px 0; }
+
+    .warmup-row { background: #f8fafc; }
+    .warmup-row .checkbox-label.checked { background: #0284c7; border-color: #0284c7; }
+    .cardio-row { background: #f0fdf4; }
+    .cardio-row .checkbox-label.checked { background: #16a34a; border-color: #16a34a; }
+    .running-row { background: #fff7ed; }
+    .running-row .checkbox-label.checked { background: #ea580c; border-color: #ea580c; }
+    .cooldown-row { background: #fdf4ff; }
+    .cooldown-row .checkbox-label.checked { background: #9333ea; border-color: #9333ea; }
+  </style>
 </head>
 <body>
-
-<div class="calendar-container">
-  <div class="calendar-header">
-    <button id="prevMonth">&lt;</button>
-    <h2 id="monthTitle"></h2>
-    <button id="nextMonth">&gt;</button>
+  <div class="calendar-container">
+    <div class="calendar-header">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <button id="prevMonth">&lt;</button>
+        <h2 id="monthTitle"></h2>
+        <button id="nextMonth">&gt;</button>
+      </div>
+      <div class="header-btns">
+        <button id="exportBtn" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe;">백업</button>
+        <button id="importBtn" style="background:#f0fdf4; color:#16a34a; border-color:#bbf7d0;">복원</button>
+        <input type="file" id="importFile" style="display:none;" accept=".json">
+      </div>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
   </div>
-  <div class="calendar-grid" id="calendarGrid"></div>
-</div>
 
-<div class="routine-container">
-  <div class="date-title" id="selectedDateTitle">오늘의 운동</div>
-  <div id="readOnlyNotice" class="read-only-notice" style="display:none;">⚠️ 미래 일자는 미리 입력할 수 없습니다. (조회 전용)</div>
+  <div class="trend-container">
+    <div class="trend-title">
+      <span>📈 최근 운동량 및 수행 추이 (달성률)</span>
+      <span id="trendSummary" style="font-weight:600; color:#2563eb;">-</span>
+    </div>
+    <div class="trend-svg-box" id="trendSvgBox"></div>
+  </div>
 
-  <div class="section-title">웨이트 운동 루틴</div>
-  <div class="exercise-table" id="routineTable"></div>
+  <div class="routine-container">
+    <div class="date-title" id="selectedDateTitle">오늘의 운동</div>
+    <div id="readOnlyNotice" class="read-only-notice" style="display:none;">⚠️ 미래 일자는 미리 입력할 수 없습니다. (조회 전용)</div>
 
-  <hr class="divider">
+    <div class="section-title">운동 전 준비운동 (10공정)</div>
+    <div class="exercise-table" id="warmupTable"></div>
+    <hr class="divider">
 
-  <div class="section-title">유산소 (Cardio)</div>
-  <div class="exercise-table" id="cardioTable"></div>
+    <div class="section-title">웨이트 운동 루틴</div>
+    <div class="exercise-table" id="routineTable"></div>
+    <hr class="divider">
+    
+    <div class="section-title">유산소 (Cardio)</div>
+    <div class="exercise-table" id="cardioTable"></div>
+    <hr class="divider">
+    
+    <div class="section-title">야외 러닝 (Running)</div>
+    <div class="exercise-table" id="runningTable"></div>
+    <hr class="divider">
 
-  <hr class="divider">
+    <div class="section-title">운동 후 마무리 운동 (7공정)</div>
+    <div class="exercise-table" id="cooldownTable"></div>
+  </div>
 
-  <div class="section-title">타바타 (Tabata)</div>
-  <div class="exercise-table" id="tabataTable"></div>
-</div>
+  <script>
+    // 기존 키 접두사 유지 (데이터 유실 방지)
+    const STORAGE_PREFIX = 'workout_v2_';
 
-<script>
-  const defaultRoutine = [
-    { id: 'leg', name: '레그프레스', weight: 90, reps: 15, unit: '회', checks: 3 },
-    { id: 'pulley', name: '하이풀리', weight: 25, reps: 13, unit: '회', checks: 3 },
-    { id: 'row', name: '시티드로우', weight: 30, reps: 15, unit: '회', checks: 3 },
-    { id: 'chest', name: '시티드 체스트프레스', weight: 40, reps: 15, unit: '회', checks: 3 },
-    { id: 'shoulder', name: '숄더프레스 머신', weight: 15, reps: 12, unit: '회', checks: 3 },
-    { id: 'abs', name: '업도미널', weight: 60, reps: 13, unit: '회', checks: 3 },
-    { id: 'curl', name: '암 컬', weight: 7, reps: 12, unit: '회', checks: 3 }
-  ];
+    const defaultWarmup = [
+      { id: 'w1', name: '발목돌리기', checks: 1 },
+      { id: 'w2', name: '무릎돌리기', checks: 1 },
+      { id: 'w3', name: '허리돌리기', checks: 1 },
+      { id: 'w4', name: '몸통 기울기', checks: 1 },
+      { id: 'w5', name: '몸통 틀기', checks: 1 },
+      { id: 'w6', name: '손목돌리기', checks: 1 },
+      { id: 'w7', name: '팔꿈치', checks: 1 },
+      { id: 'w8', name: '어깨', checks: 1 },
+      { id: 'w9', name: '골반 및 무릎 정렬', checks: 1 },
+      { id: 'w10', name: '목 돌리기', checks: 1 }
+    ];
 
-  const defaultCardio = [
-    { id: 'cardio', name: 'Zone 2 유산소', sub: '(경사10, 속도5, 심박 높으면 경사부터 줄이기)', weight: 0, reps: 40, unit: '분', checks: 1 }
-  ];
+    const defaultRoutine = [
+      { id: 'leg', name: '레그프레스', weight: 90, reps: 15, unit: '회', checks: 3 },
+      { id: 'pulley', name: '하이풀리', weight: 25, reps: 13, unit: '회', checks: 3 },
+      { id: 'row', name: '시티드로우', weight: 30, reps: 15, unit: '회', checks: 3 },
+      { id: 'chest', name: '시티드 체스트프레스', weight: 40, reps: 15, unit: '회', checks: 3 },
+      { id: 'shoulder', name: '숄더프레스 머신', weight: 15, reps: 12, unit: '회', checks: 3 },
+      { id: 'abs', name: '업도미널', weight: 60, reps: 13, unit: '회', checks: 3 },
+      { id: 'curl', name: '암 컬', weight: 7, reps: 12, unit: '회', checks: 3 }
+    ];
 
-  const defaultTabata = [
-    { id: 'tabata', name: '타바타 트레이닝', weight: 0, reps: 10, unit: '분', checks: 1 }
-  ];
+    const defaultCardio = [
+      { id: 'cardio', name: 'Zone 2 유산소', sub: '(경사10, 속도5, 심박 높으면 경사부터 줄이기)', weight: 0, reps: 40, unit: '분', checks: 1 }
+    ];
 
-  const allExercises = [...defaultRoutine, ...defaultCardio, ...defaultTabata];
+    const defaultRunning = [
+      { id: 'running', name: '트랙 / 공원 러닝', time: 30, distance: 3.0, checks: 1 }
+    ];
 
-  let currentDate = new Date();
-  let viewDate = new Date();
+    const defaultCooldown = [
+      { id: 'c1', name: '어깨', checks: 1 },
+      { id: 'c2', name: '삼두근', checks: 1 },
+      { id: 'c3', name: '어깨 앞 및 가슴', checks: 1 },
+      { id: 'c4', name: '골반 및 무릎 정렬', checks: 1 },
+      { id: 'c5', name: '엉덩이', checks: 1 },
+      { id: 'c6', name: '허벅지 앞쪽', checks: 1 },
+      { id: 'c7', name: '종아리 뒤쪽', checks: 1 }
+    ];
 
-  function getFormattedDate(d) {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
+    const allExercises = [...defaultWarmup, ...defaultRoutine, ...defaultCardio, ...defaultRunning, ...defaultCooldown];
 
-  const todayStr = getFormattedDate(currentDate);
-  let selectedDateStr = todayStr;
+    let currentDate = new Date();
+    let viewDate = new Date();
 
-  function loadData(dateStr) {
-    const data = localStorage.getItem('workout_v2_' + dateStr);
-    return data ? JSON.parse(data) : {};
-  }
+    function getFormattedDate(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
 
-  function saveData(dateStr, data) {
-    localStorage.setItem('workout_v2_' + dateStr, JSON.stringify(data));
-    renderCalendar();
-  }
+    const todayStr = getFormattedDate(currentDate);
+    let selectedDateStr = todayStr;
 
-  function getLatestSavedValue(itemId, fieldType, defaultVal) {
-    const keys = Object.keys(localStorage)
-      .filter(k => k.startsWith('workout_v2_'))
-      .map(k => k.replace('workout_v2_', ''))
-      .filter(dStr => dStr <= selectedDateStr)
-      .sort()
-      .reverse();
+    function loadData(dateStr) {
+      const data = localStorage.getItem(STORAGE_PREFIX + dateStr);
+      return data ? JSON.parse(data) : {};
+    }
 
-    for (let dStr of keys) {
-      const data = loadData(dStr);
-      if (data[`${itemId}_${fieldType}`] !== undefined) {
-        return data[`${itemId}_${fieldType}`];
+    function saveData(dateStr, data) {
+      localStorage.setItem(STORAGE_PREFIX + dateStr, JSON.stringify(data));
+      renderCalendar();
+      renderTrendChart();
+    }
+
+    function getLatestSavedValue(itemId, fieldType, defaultVal, targetDateStr = selectedDateStr) {
+      const keys = Object.keys(localStorage)
+        .filter(k => k.startsWith(STORAGE_PREFIX))
+        .map(k => k.replace(STORAGE_PREFIX, ''))
+        .filter(dStr => dStr <= targetDateStr)
+        .sort()
+        .reverse();
+
+      for (let dStr of keys) {
+        const data = loadData(dStr);
+        if (data[`${itemId}_${fieldType}`] !== undefined) {
+          return data[`${itemId}_${fieldType}`];
+        }
+      }
+      return defaultVal;
+    }
+
+    function checkDetrainingAndAdjust() {
+      const todayData = loadData(todayStr);
+      if (Object.keys(todayData).length > 0) return;
+
+      const pastKeys = Object.keys(localStorage)
+        .filter(k => k.startsWith(STORAGE_PREFIX))
+        .map(k => k.replace(STORAGE_PREFIX, ''))
+        .filter(dStr => dStr < todayStr)
+        .sort()
+        .reverse();
+
+      let lastWorkoutDateStr = null;
+
+      for (let dStr of pastKeys) {
+        const data = loadData(dStr);
+        let hasCheck = false;
+        allExercises.forEach(item => {
+          for (let c = 1; c <= item.checks; c++) {
+            if (data[`${item.id}_check_${c}`] === true) hasCheck = true;
+          }
+        });
+        if (hasCheck) {
+          lastWorkoutDateStr = dStr;
+          break;
+        }
+      }
+
+      if (!lastWorkoutDateStr) return;
+
+      const lastDate = new Date(lastWorkoutDateStr + 'T00:00:00');
+      const todayDate = new Date(todayStr + 'T00:00:00');
+      const diffDays = Math.floor((todayDate - lastDate) / (1000 * 60 * 60 * 24));
+
+      if (diffDays >= 10) {
+        alert("운동량 부족으로 운동량을 조정합니다.");
+        const ratio = diffDays >= 21 ? 0.8 : 0.9;
+        const adjustedData = { _autoAdjusted: true };
+
+        defaultRoutine.forEach(item => {
+          const prevWeight = Number(getLatestSavedValue(item.id, 'weight', item.weight, lastWorkoutDateStr));
+          const prevReps = getLatestSavedValue(item.id, 'reps', item.reps, lastWorkoutDateStr);
+          adjustedData[`${item.id}_weight`] = Math.max(1, Math.round(prevWeight * ratio));
+          adjustedData[`${item.id}_reps`] = prevReps;
+        });
+
+        defaultCardio.forEach(item => {
+          const prevReps = Number(getLatestSavedValue(item.id, 'reps', item.reps, lastWorkoutDateStr));
+          adjustedData[`${item.id}_reps`] = Math.max(5, Math.round(prevReps * ratio));
+        });
+
+        defaultRunning.forEach(item => {
+          const prevTime = Number(getLatestSavedValue(item.id, 'time', item.time, lastWorkoutDateStr));
+          const prevDist = Number(getLatestSavedValue(item.id, 'distance', item.distance, lastWorkoutDateStr));
+          adjustedData[`${item.id}_time`] = Math.max(5, Math.round(prevTime * ratio));
+          adjustedData[`${item.id}_distance`] = Math.max(0.5, Number((prevDist * ratio).toFixed(1)));
+        });
+
+        saveData(todayStr, adjustedData);
       }
     }
-    return defaultVal;
-  }
 
-  function renderCalendar() {
-    const year = viewDate.getFullYear();
-    const month = viewDate.getMonth();
-    document.getElementById('monthTitle').innerText = `${year}년 ${month + 1}월`;
+    function renderTrendChart() {
+      const box = document.getElementById('trendSvgBox');
+      const year = viewDate.getFullYear();
+      const month = viewDate.getMonth();
+      const lastDate = new Date(year, month + 1, 0).getDate();
 
-    const grid = document.getElementById('calendarGrid');
-    grid.innerHTML = '';
+      let points = [];
+      let activeDaysCount = 0;
 
-    const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-    dayNames.forEach(name => {
-      const el = document.createElement('div');
-      el.className = 'day-name';
-      el.innerText = name;
-      grid.appendChild(el);
-    });
+      for (let day = 1; day <= lastDate; day++) {
+        const cellDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const savedData = loadData(cellDateStr);
+        let dayScore = 0;
+        let dayChecked = false;
 
-    const firstDay = new Date(year, month, 1).getDay();
-    const lastDate = new Date(year, month + 1, 0).getDate();
+        allExercises.forEach(item => {
+          for (let c = 1; c <= item.checks; c++) {
+            if (savedData[`${item.id}_check_${c}`] === true) {
+              dayScore += 1;
+              dayChecked = true;
+            }
+          }
+        });
 
-    for (let i = 0; i < firstDay; i++) {
-      grid.appendChild(document.createElement('div'));
+        if (dayChecked) activeDaysCount++;
+        const maxScorePerDay = 40;
+        points.push({ day, score: Math.min(dayScore, maxScorePerDay), max: maxScorePerDay, checked: dayChecked });
+      }
+
+      document.getElementById('trendSummary').innerText = `${month + 1}월 총 운동일: ${activeDaysCount}일`;
+
+      const svgWidth = box.clientWidth || 300;
+      const svgHeight = 30;
+      const stepX = svgWidth / (lastDate > 1 ? lastDate - 1 : 1);
+
+      let svgHtml = `<svg width="100%" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" preserveAspectRatio="none" style="overflow:visible;">`;
+      svgHtml += `<line x1="0" y1="${svgHeight}" x2="${svgWidth}" y2="${svgHeight}" stroke="#cbd5e1" stroke-width="1" />`;
+
+      let polylinePoints = "";
+      points.forEach((p, idx) => {
+        const cx = idx * stepX;
+        const cy = svgHeight - (p.score / p.max) * (svgHeight - 6) - 4;
+        polylinePoints += `${cx},${cy} `;
+      });
+
+      if (points.length > 0) {
+        svgHtml += `<polyline fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${polylinePoints}" />`;
+      }
+
+      points.forEach((p, idx) => {
+        const cx = idx * stepX;
+        const cy = svgHeight - (p.score / p.max) * (svgHeight - 6) - 4;
+        const color = p.checked ? "#16a34a" : "#cbd5e1";
+        const r = p.checked ? "2.5" : "1.5";
+        svgHtml += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" stroke="#ffffff" stroke-width="1" />`;
+      });
+
+      svgHtml += `</svg>`;
+      box.innerHTML = svgHtml;
     }
 
-    for (let day = 1; day <= lastDate; day++) {
-      const cellDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const cell = document.createElement('div');
-      cell.className = 'day-cell';
-      if (cellDateStr === todayStr) cell.classList.add('today');
+    function renderCalendar() {
+      const year = viewDate.getFullYear();
+      const month = viewDate.getMonth();
+      document.getElementById('monthTitle').innerText = `${year}년 ${month + 1}월`;
 
-      const numEl = document.createElement('div');
-      numEl.className = 'day-number';
-      numEl.innerText = day;
-      cell.appendChild(numEl);
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
 
-      const savedData = loadData(cellDateStr);
-      
-      let hasAnyCheck = false;
-      allExercises.forEach(item => {
-        for (let c = 1; c <= item.checks; c++) {
-          if (savedData[`${item.id}_check_${c}`] === true) {
-            hasAnyCheck = true;
-            break;
+      const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+      dayNames.forEach(name => {
+        const el = document.createElement('div');
+        el.className = 'day-name';
+        el.innerText = name;
+        grid.appendChild(el);
+      });
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const lastDate = new Date(year, month + 1, 0).getDate();
+
+      for (let i = 0; i < firstDay; i++) {
+        grid.appendChild(document.createElement('div'));
+      }
+
+      for (let day = 1; day <= lastDate; day++) {
+        const cellDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const cell = document.createElement('div');
+        cell.className = 'day-cell';
+        if (cellDateStr === todayStr) cell.classList.add('today');
+
+        const numEl = document.createElement('div');
+        numEl.className = 'day-number';
+        numEl.innerText = day;
+        cell.appendChild(numEl);
+
+        const savedData = loadData(cellDateStr);
+        let hasAnyCheck = false;
+        allExercises.forEach(item => {
+          for (let c = 1; c <= item.checks; c++) {
+            if (savedData[`${item.id}_check_${c}`] === true) {
+              hasAnyCheck = true;
+              break;
+            }
+          }
+        });
+
+        const markEl = document.createElement('div');
+        markEl.className = 'status-mark';
+        if (cellDateStr <= todayStr) {
+          if (hasAnyCheck) {
+            markEl.innerText = 'O';
+            markEl.classList.add('mark-o');
+          } else {
+            markEl.innerText = 'X';
+            markEl.classList.add('mark-x');
           }
         }
-      });
+        cell.appendChild(markEl);
 
-      const markEl = document.createElement('div');
-      markEl.className = 'status-mark';
-
-      if (cellDateStr <= todayStr) {
-        if (hasAnyCheck) {
-          markEl.innerText = 'O';
-          markEl.classList.add('mark-o');
-        } else {
-          markEl.innerText = 'X';
-          markEl.classList.add('mark-x');
-        }
-      }
-
-      cell.appendChild(markEl);
-      cell.onclick = () => {
-        selectedDateStr = cellDateStr;
-        renderRoutine();
-      };
-
-      grid.appendChild(cell);
-    }
-  }
-
-  function renderRoutine() {
-    document.getElementById('selectedDateTitle').innerText = `${selectedDateStr} 운동 체크`;
-    
-    // 미래 날짜일 때만 수정 불가(Read-Only) 처리
-    const isEditable = (selectedDateStr <= todayStr);
-    document.getElementById('readOnlyNotice').style.display = isEditable ? 'none' : 'block';
-
-    const savedData = loadData(selectedDateStr);
-
-    const renderRows = (targetId, items, rowType = '') => {
-      const container = document.getElementById(targetId);
-      container.innerHTML = '';
-
-      items.forEach(item => {
-        const row = document.createElement('div');
-        row.className = 'exercise-row ' + rowType;
-
-        const weightVal = savedData[`${item.id}_weight`] !== undefined 
-          ? savedData[`${item.id}_weight`] 
-          : getLatestSavedValue(item.id, 'weight', item.weight);
-
-        const repsVal = savedData[`${item.id}_reps`] !== undefined 
-          ? savedData[`${item.id}_reps`] 
-          : getLatestSavedValue(item.id, 'reps', item.reps);
-
-        let leftHtml = `<div class="exercise-left">
-          <span class="exercise-name">${item.name}</span>`;
-        
-        if (item.sub) {
-          leftHtml += `<span class="exercise-sub">${item.sub}</span>`;
-        }
-
-        leftHtml += `<div class="exercise-inputs">`;
-        
-        if (item.id === 'cardio' || item.id === 'tabata') {
-          leftHtml += `<input type="text" class="input-field ${item.id}-reps" value="${repsVal}" ${!isEditable ? 'disabled' : ''}> ${item.unit}`;
-        } else {
-          leftHtml += `<input type="text" class="input-field ${item.id}-weight" value="${weightVal}" ${!isEditable ? 'disabled' : ''}> kg · 
-                       <input type="text" class="input-field ${item.id}-reps" value="${repsVal}" ${!isEditable ? 'disabled' : ''}> ${item.unit}`;
-        }
-        leftHtml += `</div></div>`;
-
-        let rightHtml = `<div class="exercise-right">`;
-        for (let c = 1; c <= item.checks; c++) {
-          const checkKey = `${item.id}_check_${c}`;
-          const isChecked = savedData[checkKey] || false;
-          rightHtml += `
-            <label class="checkbox-label ${isChecked ? 'checked' : ''}">
-              ${c}
-              <input type="checkbox" data-id="${item.id}" data-check="${c}" ${isChecked ? 'checked' : ''} ${!isEditable ? 'disabled' : ''}>
-            </label>
-          `;
-        }
-        rightHtml += `</div>`;
-
-        row.innerHTML = leftHtml + rightHtml;
-        container.appendChild(row);
-      });
-    };
-
-    renderRows('routineTable', defaultRoutine);
-    renderRows('cardioTable', defaultCardio, 'cardio-row');
-    renderRows('tabataTable', defaultTabata, 'tabata-row');
-
-    if (isEditable) {
-      document.querySelectorAll('.checkbox-label input').forEach(input => {
-        input.onchange = (e) => {
-          const id = e.target.getAttribute('data-id');
-          const checkNum = e.target.getAttribute('data-check');
-          const isChecked = e.target.checked;
-
-          savedData[`${id}_check_${checkNum}`] = isChecked;
-
-          allExercises.forEach(item => {
-            const weightEl = document.querySelector(`.${item.id}-weight`);
-            const repsEl = document.querySelector(`.${item.id}-reps`);
-            if (weightEl) savedData[`${item.id}_weight`] = weightEl.value;
-            if (repsEl) savedData[`${item.id}_reps`] = repsEl.value;
-          });
-
-          saveData(selectedDateStr, savedData);
+        cell.onclick = () => {
+          selectedDateStr = cellDateStr;
           renderRoutine();
         };
-      });
+        grid.appendChild(cell);
+      }
+      renderTrendChart();
+    }
 
-      document.querySelectorAll('.input-field').forEach(input => {
-        input.onchange = () => {
-          allExercises.forEach(item => {
-            const weightEl = document.querySelector(`.${item.id}-weight`);
-            const repsEl = document.querySelector(`.${item.id}-reps`);
-            if (weightEl) savedData[`${item.id}_weight`] = weightEl.value;
-            if (repsEl) savedData[`${item.id}_reps`] = repsEl.value;
-          });
-          saveData(selectedDateStr, savedData);
-        };
+    function syncAllInputsToData(targetData) {
+      allExercises.forEach(item => {
+        if (item.id === 'running') {
+          const timeEl = document.querySelector(`.${item.id}-time`);
+          const distEl = document.querySelector(`.${item.id}-distance`);
+          if (timeEl) targetData[`${item.id}_time`] = timeEl.value;
+          if (distEl) targetData[`${item.id}_distance`] = distEl.value;
+        } else if (item.weight !== undefined || item.reps !== undefined) {
+          const weightEl = document.querySelector(`.${item.id}-weight`);
+          const repsEl = document.querySelector(`.${item.id}-reps`);
+          if (weightEl) targetData[`${item.id}_weight`] = weightEl.value;
+          if (repsEl) targetData[`${item.id}_reps`] = repsEl.value;
+        }
       });
     }
-  }
 
-  document.getElementById('prevMonth').onclick = () => { viewDate.setMonth(viewDate.getMonth() - 1); renderCalendar(); };
-  document.getElementById('nextMonth').onclick = () => { viewDate.setMonth(viewDate.getMonth() + 1); renderCalendar(); };
+    function renderRoutine() {
+      document.getElementById('selectedDateTitle').innerText = `${selectedDateStr} 운동 체크`;
+      const isEditable = (selectedDateStr <= todayStr);
+      document.getElementById('readOnlyNotice').style.display = isEditable ? 'none' : 'block';
 
-  renderCalendar();
-  renderRoutine();
-</script>
+      const savedData = loadData(selectedDateStr);
+
+      const renderRows = (targetId, items, rowType = '') => {
+        const container = document.getElementById(targetId);
+        container.innerHTML = '';
+
+        items.forEach(item => {
+          const row = document.createElement('div');
+          row.className = 'exercise-row ' + rowType;
+
+          let leftHtml = `<div class="exercise-left"><span class="exercise-name">${item.name}</span>`;
+          if (item.sub) {
+            leftHtml += `<span class="exercise-sub">${item.sub}</span>`;
+          }
+          leftHtml += `<div class="exercise-inputs">`;
+
+          if (item.id === 'running') {
+            const timeVal = savedData[`${item.id}_time`] !== undefined ? savedData[`${item.id}_time`] : getLatestSavedValue(item.id, 'time', item.time);
+            const distVal = savedData[`${item.id}_distance`] !== undefined ? savedData[`${item.id}_distance`] : getLatestSavedValue(item.id, 'distance', item.distance);
+            leftHtml += `<input type="text" class="input-field ${item.id}-time" value="${timeVal}" ${!isEditable ? 'disabled' : ''}> 분 · <input type="text" class="input-field ${item.id}-distance" value="${distVal}" ${!isEditable ? 'disabled' : ''}> km`;
+          } else if (item.id === 'cardio') {
+            const repsVal = savedData[`${item.id}_reps`] !== undefined ? savedData[`${item.id}_reps`] : getLatestSavedValue(item.id, 'reps', item.reps);
+            leftHtml += `<input type="text" class="input-field ${item.id}-reps" value="${repsVal}" ${!isEditable ? 'disabled' : ''}> ${item.unit}`;
+          } else if (item.weight !== undefined) {
+            const weightVal = savedData[`${item.id}_weight`] !== undefined ? savedData[`${item.id}_weight`] : getLatestSavedValue(item.id, 'weight', item.weight);
+            const repsVal = savedData[`${item.id}_reps`] !== undefined ? savedData[`${item.id}_reps`] : getLatestSavedValue(item.id, 'reps', item.reps);
+            leftHtml += `<input type="text" class="input-field ${item.id}-weight" value="${weightVal}" ${!isEditable ? 'disabled' : ''}> kg · <input type="text" class="input-field ${item.id}-reps" value="${repsVal}" ${!isEditable ? 'disabled' : ''}> ${item.unit}`;
+          }
+
+          leftHtml += `</div></div>`;
+
+          let rightHtml = `<div class="exercise-right">`;
+          for (let c = 1; c <= item.checks; c++) {
+            const checkKey = `${item.id}_check_${c}`;
+            const isChecked = savedData[checkKey] || false;
+            rightHtml += `
+              <label class="checkbox-label ${isChecked ? 'checked' : ''}">
+                ${item.checks > 1 ? c : '✓'}
+                <input type="checkbox" data-id="${item.id}" data-check="${c}" ${isChecked ? 'checked' : ''} ${!isEditable ? 'disabled' : ''}>
+              </label>
+            `;
+          }
+          rightHtml += `</div>`;
+
+          row.innerHTML = leftHtml + rightHtml;
+          container.appendChild(row);
+        });
+      };
+
+      renderRows('warmupTable', defaultWarmup, 'warmup-row');
+      renderRows('routineTable', defaultRoutine);
+      renderRows('cardioTable', defaultCardio, 'cardio-row');
+      renderRows('runningTable', defaultRunning, 'running-row');
+      renderRows('cooldownTable', defaultCooldown, 'cooldown-row');
+
+      if (isEditable) {
+        document.querySelectorAll('.checkbox-label input').forEach(input => {
+          input.onchange = (e) => {
+            const id = e.target.getAttribute('data-id');
+            const checkNum = e.target.getAttribute('data-check');
+            savedData[`${id}_check_${checkNum}`] = e.target.checked;
+            syncAllInputsToData(savedData);
+            saveData(selectedDateStr, savedData);
+            renderRoutine();
+          };
+        });
+
+        document.querySelectorAll('.input-field').forEach(input => {
+          input.onchange = () => {
+            syncAllInputsToData(savedData);
+            saveData(selectedDateStr, savedData);
+          };
+        });
+      }
+    }
+
+    // 파일로 백업 다운로드 기능
+    document.getElementById('exportBtn').onclick = () => {
+      const backupData = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(STORAGE_PREFIX)) {
+          backupData[key] = localStorage.getItem(key);
+        }
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `workout_backup_${getFormattedDate(new Date())}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    };
+
+    // 백업 파일 불러오기(복원) 기능
+    document.getElementById('importBtn').onclick = () => {
+      document.getElementById('importFile').click();
+    };
+
+    document.getElementById('importFile').onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        try {
+          const backupData = JSON.parse(event.target.result);
+          for (let key in backupData) {
+            if (key.startsWith(STORAGE_PREFIX)) {
+              localStorage.setItem(key, backupData[key]);
+            }
+          }
+          alert("운동 기록이 성공적으로 복원되었습니다!");
+          renderCalendar();
+          renderRoutine();
+        } catch (err) {
+          alert("백업 파일 형식이 올바르지 않습니다.");
+        }
+      };
+      reader.readAsText(file);
+    };
+
+    document.getElementById('prevMonth').onclick = () => {
+      viewDate.setMonth(viewDate.getMonth() - 1);
+      renderCalendar();
+    };
+
+    document.getElementById('nextMonth').onclick = () => {
+      viewDate.setMonth(viewDate.getMonth() + 1);
+      renderCalendar();
+    };
+
+    checkDetrainingAndAdjust();
+    renderCalendar();
+    renderRoutine();
+  </script>
 </body>
 </html>
