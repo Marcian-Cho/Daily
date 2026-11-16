@@ -50,21 +50,17 @@
     hr.divider { border: 0; height: 1px; background: #cbd5e1; margin: 10px 0; }
     hr.major-divider { border: 0; height: 3px; background: #94a3b8; margin: 14px 0; border-radius: 2px; }
 
-    .warmup-row { background: #f8fafc; }
-    .cardio-row { background: #f0fdf4; }
-    .cardio-row .checkbox-label.checked { background: #16a34a; border-color: #16a34a; }
-    .running-row { background: #fff7ed; }
-    .running-row .checkbox-label.checked { background: #ea580c; border-color: #ea580c; }
-    .cooldown-row { background: #fdf4ff; }
-    .cooldown-row .checkbox-label.checked { background: #9333ea; border-color: #9333ea; }
-
-    .exercise-table.inline-check-list {
+    /* 준비운동 및 마무리운동 가로 나열형 버튼 스타일 */
+    .inline-check-list {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       gap: 6px;
       padding: 8px;
-      overflow: visible;
+      background: #ffffff;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 4px;
     }
     .inline-exercise {
       flex: 0 0 auto;
@@ -96,17 +92,15 @@
       border-color: #16a34a;
       text-decoration: line-through;
     }
-    .warmup-row .inline-exercise-button.checked {
+    /* 준비운동은 파란색 계열 체크 */
+    .warmup-container .inline-exercise-button.checked {
       background: #0284c7;
       border-color: #0284c7;
     }
-    .cooldown-row .inline-exercise-button.checked {
+    /* 마무리운동은 보라색 계열 체크 */
+    .cooldown-container .inline-exercise-button.checked {
       background: #9333ea;
       border-color: #9333ea;
-    }
-    .inline-exercise-button:focus-within {
-      outline: 2px solid #2563eb;
-      outline-offset: 2px;
     }
     .inline-exercise-button.disabled {
       opacity: 0.65;
@@ -144,7 +138,7 @@
     <div id="readOnlyNotice" class="read-only-notice" style="display:none;">⚠️ 미래 일자는 미리 입력할 수 없습니다. (조회 전용)</div>
 
     <div class="section-title">🏋️‍♂️ 실내 운동 전 준비운동</div>
-    <div class="exercise-table" id="warmupTable"></div>
+    <div id="warmupTable"></div>
     <hr class="divider">
 
     <div class="section-title">웨이트 운동 루틴</div>
@@ -156,7 +150,7 @@
     <hr class="divider">
 
     <div class="section-title">실내 운동 후 마무리 운동</div>
-    <div class="exercise-table" id="cooldownTable"></div>
+    <div id="cooldownTable"></div>
 
     <hr class="major-divider">
     <div class="section-title" style="color:#ea580c; font-size:0.8rem;">🏃‍♂️ 야외 트랙 / 공원 러닝 (별도 독립 세션)</div>
@@ -231,7 +225,6 @@
         const parsed = JSON.parse(data);
         return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
       } catch (error) {
-        console.warn(`운동 기록을 읽지 못했습니다: ${dateStr}`, error);
         return {};
       }
     }
@@ -277,7 +270,6 @@
         .reverse();
 
       let lastStrengthDateStr = null;
-
       for (let dStr of pastKeys) {
         const data = loadData(dStr);
         let hasStrengthCheck = false;
@@ -474,10 +466,10 @@
 
       const savedData = loadData(selectedDateStr);
 
-      const renderInlineCheckRows = (targetId, items, rowType = '') => {
+      const renderInlineCheckRows = (targetId, items, containerClass) => {
         const container = document.getElementById(targetId);
         if (!container) return;
-        container.className = `exercise-table inline-check-list ${rowType}`;
+        container.className = `inline-check-list ${containerClass}`;
         container.innerHTML = '';
 
         items.forEach(item => {
@@ -505,6 +497,7 @@
       const renderRows = (targetId, items, rowType = '') => {
         const container = document.getElementById(targetId);
         if (!container) return;
+        container.className = 'exercise-table';
         container.innerHTML = '';
 
         items.forEach(item => {
@@ -550,10 +543,10 @@
         });
       };
 
-      renderInlineCheckRows('warmupTable', defaultWarmup, 'warmup-row');
+      renderInlineCheckRows('warmupTable', defaultWarmup, 'warmup-container');
       renderRows('routineTable', defaultRoutine);
       renderRows('cardioTable', defaultCardio, 'cardio-row');
-      renderInlineCheckRows('cooldownTable', defaultCooldown, 'cooldown-row');
+      renderInlineCheckRows('cooldownTable', defaultCooldown, 'cooldown-container');
       renderRows('runningTable', defaultRunning, 'running-row');
 
       if (isEditable) {
