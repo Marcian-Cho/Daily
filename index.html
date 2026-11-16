@@ -409,7 +409,6 @@
 
       const savedData = loadData(selectedDateStr);
 
-      // 준비운동/마무리운동처럼 행 전체를 터치해서 체크하는 렌더링 함수
       const renderToggleRows = (targetId, items) => {
         const container = document.getElementById(targetId);
         container.innerHTML = '';
@@ -464,41 +463,4 @@
             leftHtml += `<input type="text" class="input-field ${item.id}-reps" value="${repsVal}" ${!isEditable ? 'disabled' : ''}> ${item.unit}`;
           } else if (item.weight !== undefined) {
             const weightVal = savedData[`${item.id}_weight`] !== undefined ? savedData[`${item.id}_weight`] : getLatestSavedValue(item.id, 'weight', item.weight);
-            const repsVal = savedData[`${item.id}_reps`] !== undefined ? savedData[`${item.id}_reps`] : getLatestSavedValue(item.id, 'reps', item.reps);
-            leftHtml += `<input type="text" class="input-field ${item.id}-weight" value="${weightVal}" ${!isEditable ? 'disabled' : ''}> kg · <input type="text" class="input-field ${item.id}-reps" value="${repsVal}" ${!isEditable ? 'disabled' : ''}> ${item.unit}`;
-          }
-
-          leftHtml += `</div></div>`;
-
-          let rightHtml = `<div class="exercise-right">`;
-          for (let c = 1; c <= item.checks; c++) {
-            const checkKey = `${item.id}_check_${c}`;
-            const isChecked = savedData[checkKey] || false;
-            rightHtml += `
-              <label class="checkbox-label ${isChecked ? 'checked' : ''}">
-                ${item.checks > 1 ? c : '✓'}
-                <input type="checkbox" data-id="${item.id}" data-check="${c}" ${isChecked ? 'checked' : ''} ${!isEditable ? 'disabled' : ''}>
-              </label>
-            `;
-          }
-          rightHtml += `</div>`;
-
-          row.innerHTML = leftHtml + rightHtml;
-          container.appendChild(row);
-        });
-      };
-
-      // 준비운동과 마무리운동은 터치형 토글 적용
-      renderToggleRows('warmupTable', defaultWarmup);
-      renderRows('routineTable', defaultRoutine);
-      renderRows('cardioTable', defaultCardio, 'cardio-row');
-      renderRows('runningTable', defaultRunning, 'running-row');
-      renderToggleRows('cooldownTable', defaultCooldown);
-
-      if (isEditable) {
-        document.querySelectorAll('.checkbox-label input').forEach(input => {
-          input.onchange = (e) => {
-            const id = e.target.getAttribute('data-id');
-            const checkNum = e.target.getAttribute('data-check');
-            savedData[`${id}_check_${checkNum}`] = e.target.checked;
-            syncAllInputsToData(savedData);
+            const repsVal = savedData[`${item.id}_reps`] !==
