@@ -143,7 +143,7 @@
     <div class="date-title" id="selectedDateTitle">오늘의 운동</div>
     <div id="readOnlyNotice" class="read-only-notice" style="display:none;">⚠️ 미래 일자는 미리 입력할 수 없습니다. (조회 전용)</div>
 
-    <div class="section-title">🏋️‍♂️ 실내 운동 전 준비운동 (10공정)</div>
+    <div class="section-title">🏋️‍♂️ 실내 운동 전 준비운동</div>
     <div class="exercise-table" id="warmupTable"></div>
     <hr class="divider">
 
@@ -155,7 +155,7 @@
     <div class="exercise-table" id="cardioTable"></div>
     <hr class="divider">
 
-    <div class="section-title">실내 운동 후 마무리 운동 (7공정)</div>
+    <div class="section-title">실내 운동 후 마무리 운동</div>
     <div class="exercise-table" id="cooldownTable"></div>
 
     <hr class="major-divider">
@@ -176,7 +176,7 @@
       { id: 'w7', name: '팔꿈치', checks: 1 },
       { id: 'w8', name: '어깨', checks: 1 },
       { id: 'w9', name: '골반 및 무릎 정렬', checks: 1 },
-      { id: 'w10', name: '목 돌리기', checks: 1 }
+      { id: 'w10', name: '목 돌리기', checks: 1 },
       { id: 'w11', name: '스쿼트', checks: 1 }
     ];
 
@@ -209,8 +209,6 @@
     ];
 
     const allExercises = [...defaultWarmup, ...defaultRoutine, ...defaultCardio, ...defaultRunning, ...defaultCooldown];
-    
-    // 웨이트 공백기 계산에는 오직 '실내 웨이트 루틴(defaultRoutine)'만 반영
     const strengthExercises = [...defaultRoutine];
 
     let currentDate = new Date();
@@ -261,11 +259,8 @@
       return defaultVal;
     }
 
-    // 오늘 러닝만 기록했더라도 웨이트 공백기가 정확히 감지되도록 수정된 로직
     function checkDetrainingAndAdjust() {
       const todayData = loadData(todayStr);
-      
-      // 오늘 웨이트 관련 기록이 이미 조정되었거나 존재하면 중복 실행 방지
       let hasTodayStrength = false;
       strengthExercises.forEach(item => {
         for (let c = 1; c <= item.checks; c++) {
@@ -306,8 +301,6 @@
       if (diffDays >= 10) {
         alert("실내 웨이트 운동량 부족으로 운동량을 조정합니다.");
         const ratio = diffDays >= 21 ? 0.8 : 0.9;
-        
-        // 기존 오늘 데이터(러닝 등)를 유지하면서 웨이트 조정값 추가
         const adjustedData = { ...todayData, _autoAdjusted: true };
 
         defaultRoutine.forEach(item => {
@@ -455,7 +448,6 @@
       renderTrendChart();
     }
 
-    // 입력 필드 클래스 오타(하이픈/언더바) 수정 반영
     function syncAllInputsToData(targetData) {
       allExercises.forEach(item => {
         if (item.id === 'running') {
@@ -468,7 +460,7 @@
           if (repsEl) targetData[`${item.id}_reps`] = repsEl.value;
         } else if (item.weight !== undefined || item.reps !== undefined) {
           const weightEl = document.querySelector(`.${item.id}-weight`);
-          const repsEl = document.querySelector(`.${item.id}_reps`); // _reps로 정확히 통일
+          const repsEl = document.querySelector(`.${item.id}_reps`);
           if (weightEl) targetData[`${item.id}_weight`] = weightEl.value;
           if (repsEl) targetData[`${item.id}_reps`] = repsEl.value;
         }
