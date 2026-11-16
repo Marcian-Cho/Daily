@@ -33,7 +33,7 @@
     .section-title { font-size: 0.75rem; font-weight: 700; color: #475569; margin: 10px 0 4px 0; text-transform: uppercase; }
 
     .exercise-table { width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 4px; }
-    .exercise-row { border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; }
+    .exercise-row { border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; width: 100%; }
     .exercise-row:last-child { border-bottom: none; }
     .exercise-left { display: flex; flex-direction: column; gap: 2px; flex: 1; padding-right: 6px; }
     .exercise-name { font-size: 0.8rem; font-weight: 700; color: #0f172a; }
@@ -92,15 +92,17 @@
       border-color: #16a34a;
       text-decoration: line-through;
     }
-    /* 준비운동은 파란색 계열 체크 */
     .warmup-container .inline-exercise-button.checked {
       background: #0284c7;
       border-color: #0284c7;
     }
-    /* 마무리운동은 보라색 계열 체크 */
     .cooldown-container .inline-exercise-button.checked {
       background: #9333ea;
       border-color: #9333ea;
+    }
+    .inline-exercise-button:focus-within {
+      outline: 2px solid #2563eb;
+      outline-offset: 2px;
     }
     .inline-exercise-button.disabled {
       opacity: 0.65;
@@ -142,11 +144,11 @@
     <hr class="divider">
 
     <div class="section-title">웨이트 운동 루틴</div>
-    <div class="exercise-table" id="routineTable"></div>
+    <div id="routineTable"></div>
     <hr class="divider">
     
     <div class="section-title">실내 유산소 (Cardio)</div>
-    <div class="exercise-table" id="cardioTable"></div>
+    <div id="cardioTable"></div>
     <hr class="divider">
 
     <div class="section-title">실내 운동 후 마무리 운동</div>
@@ -154,7 +156,7 @@
 
     <hr class="major-divider">
     <div class="section-title" style="color:#ea580c; font-size:0.8rem;">🏃‍♂️ 야외 트랙 / 공원 러닝 (별도 독립 세션)</div>
-    <div class="exercise-table" id="runningTable"></div>
+    <div id="runningTable"></div>
   </div>
 
   <script>
