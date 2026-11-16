@@ -47,14 +47,18 @@
     .checkbox-label.checked { background: #2563eb; color: #ffffff; border-color: #2563eb; }
     hr.divider { border: 0; height: 1px; background: #cbd5e1; margin: 8px 0; }
 
-    .warmup-row { background: #f8fafc; }
-    .warmup-row .checkbox-label.checked { background: #0284c7; border-color: #0284c7; }
+    /* 준비/마무리 운동 전체 터치형 행 스타일 */
+    .toggle-row { cursor: pointer; transition: background-color 0.15s; }
+    .toggle-row:hover { background-color: #f1f5f9; }
+    .toggle-row.checked-row { background-color: #f0fdf4; }
+    .toggle-row.checked-row .exercise-name { color: #16a34a; text-decoration: line-through; }
+    .toggle-badge { font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #64748b; }
+    .toggle-row.checked-row .toggle-badge { background: #16a34a; color: #ffffff; border-color: #16a34a; }
+
     .cardio-row { background: #f0fdf4; }
     .cardio-row .checkbox-label.checked { background: #16a34a; border-color: #16a34a; }
     .running-row { background: #fff7ed; }
     .running-row .checkbox-label.checked { background: #ea580c; border-color: #ea580c; }
-    .cooldown-row { background: #fdf4ff; }
-    .cooldown-row .checkbox-label.checked { background: #9333ea; border-color: #9333ea; }
   </style>
 </head>
 <body>
@@ -86,7 +90,7 @@
     <div class="date-title" id="selectedDateTitle">오늘의 운동</div>
     <div id="readOnlyNotice" class="read-only-notice" style="display:none;">⚠️ 미래 일자는 미리 입력할 수 없습니다. (조회 전용)</div>
 
-    <div class="section-title">운동 전 준비운동 (10공정)</div>
+    <div class="section-title">운동 전 준비운동 (10공정) - 항목 터치 시 완료</div>
     <div class="exercise-table" id="warmupTable"></div>
     <hr class="divider">
 
@@ -102,12 +106,11 @@
     <div class="exercise-table" id="runningTable"></div>
     <hr class="divider">
 
-    <div class="section-title">운동 후 마무리 운동 (7공정)</div>
+    <div class="section-title">운동 후 마무리 운동 (7공정) - 항목 터치 시 완료</div>
     <div class="exercise-table" id="cooldownTable"></div>
   </div>
 
   <script>
-    // 기존 키 접두사 유지 (데이터 유실 방지)
     const STORAGE_PREFIX = 'workout_v2_';
 
     const defaultWarmup = [
@@ -406,6 +409,38 @@
 
       const savedData = loadData(selectedDateStr);
 
+      // 준비운동/마무리운동처럼 행 전체를 터치해서 체크하는 렌더링 함수
+      const renderToggleRows = (targetId, items) => {
+        const container = document.getElementById(targetId);
+        container.innerHTML = '';
+
+        items.forEach(item => {
+          const isChecked = savedData[`${item.id}_check_1`] || false;
+          const row = document.createElement('div');
+          row.className = `exercise-row toggle-row ${isChecked ? 'checked-row' : ''}`;
+
+          row.innerHTML = `
+            <div class="exercise-left">
+              <span class="exercise-name">${item.name}</span>
+            </div>
+            <div class="exercise-right">
+              <span class="toggle-badge">${isChecked ? '완료' : '대기'}</span>
+            </div>
+          `;
+
+          if (isEditable) {
+            row.onclick = () => {
+              const currentStatus = savedData[`${item.id}_check_1`] || false;
+              savedData[`${item.id}_check_1`] = !currentStatus;
+              syncAllInputsToData(savedData);
+              saveData(selectedDateStr, savedData);
+              renderRoutine();
+            };
+          }
+          container.appendChild(row);
+        });
+      };
+
       const renderRows = (targetId, items, rowType = '') => {
         const container = document.getElementById(targetId);
         container.innerHTML = '';
@@ -453,11 +488,12 @@
         });
       };
 
-      renderRows('warmupTable', defaultWarmup, 'warmup-row');
+      // 준비운동과 마무리운동은 터치형 토글 적용
+      renderToggleRows('warmupTable', defaultWarmup);
       renderRows('routineTable', defaultRoutine);
       renderRows('cardioTable', defaultCardio, 'cardio-row');
       renderRows('runningTable', defaultRunning, 'running-row');
-      renderRows('cooldownTable', defaultCooldown, 'cooldown-row');
+      renderToggleRows('cooldownTable', defaultCooldown);
 
       if (isEditable) {
         document.querySelectorAll('.checkbox-label input').forEach(input => {
@@ -466,78 +502,3 @@
             const checkNum = e.target.getAttribute('data-check');
             savedData[`${id}_check_${checkNum}`] = e.target.checked;
             syncAllInputsToData(savedData);
-            saveData(selectedDateStr, savedData);
-            renderRoutine();
-          };
-        });
-
-        document.querySelectorAll('.input-field').forEach(input => {
-          input.onchange = () => {
-            syncAllInputsToData(savedData);
-            saveData(selectedDateStr, savedData);
-          };
-        });
-      }
-    }
-
-    // 파일로 백업 다운로드 기능
-    document.getElementById('exportBtn').onclick = () => {
-      const backupData = {};
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith(STORAGE_PREFIX)) {
-          backupData[key] = localStorage.getItem(key);
-        }
-      }
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `workout_backup_${getFormattedDate(new Date())}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-    };
-
-    // 백업 파일 불러오기(복원) 기능
-    document.getElementById('importBtn').onclick = () => {
-      document.getElementById('importFile').click();
-    };
-
-    document.getElementById('importFile').onchange = (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        try {
-          const backupData = JSON.parse(event.target.result);
-          for (let key in backupData) {
-            if (key.startsWith(STORAGE_PREFIX)) {
-              localStorage.setItem(key, backupData[key]);
-            }
-          }
-          alert("운동 기록이 성공적으로 복원되었습니다!");
-          renderCalendar();
-          renderRoutine();
-        } catch (err) {
-          alert("백업 파일 형식이 올바르지 않습니다.");
-        }
-      };
-      reader.readAsText(file);
-    };
-
-    document.getElementById('prevMonth').onclick = () => {
-      viewDate.setMonth(viewDate.getMonth() - 1);
-      renderCalendar();
-    };
-
-    document.getElementById('nextMonth').onclick = () => {
-      viewDate.setMonth(viewDate.getMonth() + 1);
-      renderCalendar();
-    };
-
-    checkDetrainingAndAdjust();
-    renderCalendar();
-    renderRoutine();
-  </script>
-</body>
-</html>
